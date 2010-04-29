@@ -1,0 +1,55 @@
+$def with (playlists, songs, title='.Recently Added')
+
+<link rel="stylesheet" type="text/css" href="static/mPlayer.css">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+<script type="text/javascript" src="static/jquery.jplayer.min.js"></script>
+<script type="text/javascript" src="static/mPlayerControls.js"></script>
+<div id='mPlayer'>
+	<a href='#' onclick='return playSong(null, event)' class='mpButton' id='play'><canvas id='playCanvas' height='12' width='10'>play</canvas></a>
+	<a href='#' onclick='return prevSong(event)' class='mpButton' id='prev'><canvas id='prevCanvas' height='10' width='15'>prev</canvas></a>
+	<a href='#' onclick='return seekBackward(event)' class='mpButton' id='backward'><canvas id='backCanvas' height='10' width='15'></canvas></a>
+	<a href='#' onclick='return seekForward(event)' class='mpButton' id='forward'><canvas id='forwCanvas' height='10' width='15'></canvas></a>
+	<a href='#' onclick='return nextSong(event)' class='mpButton' id='next'><canvas id='nextCanvas' height='10' width='15'>next</canvas></a>
+	<a href='#' onclick='return toggleRepeat(event)' class='mpButton' id='repeat'><canvas id='repeatCanvas' height='12' width='17'>repeat</canvas></a>
+	<a href='#' onclick='return toggleShuffle(event)' class='mpButton' id='shuffle'><canvas id='shuffleCanvas' height='12' width='20'>shuffle</canvas></a>
+	<a href='#' onmouseover='return openVolume(event)' onmouseout='closeVolume(event)' onclick='return mute(event)' class='mpButton' id='volume'><canvas id='volumeCanvas' height='12' width='16'>volume</canvas></a>
+	<div onmouseout='closeVolume(event)' onmousedown='return startDrag(event)' return false' id='volBar'><div id='volSlider'></div></div>
+	|<div id='songTime'></div>|<div id='songInfo'></div>
+</div>
+<a  id='progressBar' onMouseDown='return setMouseDown(event)' onClick='return false' href='#'><div id='loadBar'><div id='time'></div></div></a>
+<div id='content'>
+	<div id ='mediaSidebar'>
+		<div id='typeSelect'>
+			<ul>
+				<li><a href='#' id='typeSelected' onclick="return changeType(event, 'Playlist');">Playlists</a></li><li><a href='#' onclick="return changeType(event, 'artists');">Artists</a></li><li><a href='#' onclick="return changeType(event, 'albums');">Albums</a></li>
+			</ul>
+		</div>
+		<div id='searchBox'><input type='text' id='searchText' onKeyUp='search(event)'/><canvas id='searchClear' onClick='clearSearch(event)' height='12' width='12'></canvas></div>
+		<div id='sidebarContent'>
+			<h2>Playlists</h2>
+			<ul id='sidebarContent'>
+			$for folder in playlists:
+				<li><a onclick="return openFolder(event, '$folder[1]')" href='blah.html'>$folder[0]</a></li>
+				<div class='folder' id='$folder[1]'>
+					<ul>
+					$for pl in folder[2]:
+						$if (title == pl[0]):
+							<li id='curPl'><a onClick='return getContent(event, "Playlist", "$pl[1]")' href="music.html?Playlist=$pl[1]">$pl[0]</a></li> 
+						$else:
+							<li><a onClick='return getContent(event, "Playlist", "$pl[1]")' href="music.html?Playlist=$pl[1]">$pl[0]</a></li>
+					</ul>
+				</div>
+			</ul>
+		</div>
+		<button type='button' id='reloadButton' style='display:none' onclick='return(reloadLibrary())'>Reload Library</button>
+	</div>
+	<div id='main'>
+		<h2>$title</h2>
+			<ul>
+			$for name in songs:
+				<li><a onclick='return playSong($loop.index0, event)' href="$name[0]">$loop.index. $name[1] - $name[2]</a></li>
+			</ul>
+	</div>
+	<div id='volumePopover'>Volume<div id='volumeOuter'><div id='volumeInner'></div></div></div>
+</div>
+<div id='mPlayerObj'> </div>

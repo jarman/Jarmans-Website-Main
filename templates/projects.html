@@ -1,0 +1,41 @@
+<div id='content'>
+	<h2>Projects</h2>
+	<div class='post'>
+		<a href='music'>iTunes Web App</a>
+		<p>I wanted a way to access my music at work and didn't like the existing solutions I found, so i built one. 
+		It tends to work best in newer versions of Chrome/Safari/Firefox. Opera and IE kind of work but don't look quite the same.</p>
+		<p>Some Features:</p>
+		<ul>
+			<li>Now attempts to use HTML5 audio and then falls back to flash for other browsers. I replaced my own HTML5 audio implementation with an a plugin called jPlayer</li>
+			<li>Added the ablility to shuffle tracks</li>
+			<li>Redesigned the sidebar CSS to be a bit more minimalistic. Made some elements look glossy (in some browsers).</li>
+			<li>Added the ability to view by artists and albums</li>
+			<li>Added the ability to change the volume</li>
+			<li>The progress of the buffering is now displayed</li>
+			<li>Fixed search so that only most recent AJAX results are loaded</li>
+			<li>HTML now served by Google App Engine and not the computer in my living room</li>
+			<li>Key Commands are supported:
+			<ul>
+				<li><b>Spacebar</b>: play/pause</li>
+				<li><b>Left/Right Arrows</b>: Previous/Next Track</li>
+				<li><b>Up/Down Arrows</b>: Volume Up/Down (check out the UI)</li>
+				<li><b>s</b>: Toggle Shuffle</li>
+				<li><b>r</b>: Toggle Repeat</li>
+			</ul>
+			</li>
+			<li>Bugs
+			<ul>
+				<li>If the file isn't an MP3 things aren't pretty. I have some AAC and Apple Lossless files which don't behave well. I've removed lossless from the playlists but normal AAC files remain, since they play in some browsers. Note that this may cause problems.</li>
+			</ul>
+			</li>
+		</ul>
+	</div>
+	<div class='post'>
+		<a href='projects/random_circles.html'>Random Circles</a>
+		<p>Generates randomly placed circles on a canvas</p>	
+	</div>
+	<div class='post'>
+		<a href='http:\\jarman.homedns.org:82\sudiflash\index.html'>Sudikoff Interactive Directory</a>
+		<p>An interactive directory of the dartmouth computer science department. Note that it was designed for a touchscreen and also that the database that the flash uses is incomplete. It wasn't optimized for the internet at all because it would have normally run locally.</p>			
+	</div>
+</div>

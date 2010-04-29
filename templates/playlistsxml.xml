@@ -1,0 +1,9 @@
+$def with (playlists)
+
+<playlists>
+$for folder in playlists:
+	<folder id="$folder[1]" name="$folder[0]">
+	$for pl in folder[2]:
+		<playlist id="$pl[1]" name="$pl[0]" />
+	</folder>
+</playlists>

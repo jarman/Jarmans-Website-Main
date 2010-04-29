@@ -1,0 +1,32 @@
+$def with (curTab, content)
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<!--[if IE]><script src="static/excanvas.js"></script>
+	<script defer type="text/javascript" src="static/ieShadow.js"></script><![endif]-->
+	<link rel="stylesheet" type="text/css" href="../static/main.css">
+	<link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+	<title>jarman rogers</title>
+</head>
+<body>
+	<div id='center'>
+		<h1><a href='index.html'>jarman rogers</a></h1>
+		<div id="topMenu">
+		$for tab in ['home', 'projects', 'music', 'about']:
+			$if (curTab == tab):
+				<a id='curTab' href="../$(tab)">$tab</a>
+			$else:
+				<a class='tab' href="../$(tab)">$tab</a>
+		</div>
+		$content
+		<div id='footer'>
+			design by jarman rogers 
+		</div>
+	</div>
+	<!--[if IE]>
+	<div id='ieShadow'>
+	</div>
+	<![endif]-->
+</body>
+</html>

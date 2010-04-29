@@ -1,0 +1,35 @@
+.post {
+	border-top: 1px solid #c9c7c0;
+	padding-top: 10px;
+}
+
+#content .post h2 {
+	text-transform: none;
+}
+
+.postBottom {
+	font-size: 0.8em;
+	color: #797770;
+	text-align:right;
+	margin-bottom: 5px;
+}
+
+#sidebar {
+	margin: -20px -20px 0px -20px;
+	padding: 20px;
+	background-color: #e9e7e0;
+	float: right;
+	width:240px;
+	border-left: 1px solid #c9c7c0;
+}
+
+#olderPosts {
+	margin-top:1em;
+	margin-bottom:-1em;
+}
+
+#newerPosts {
+	margin-top:0px;
+	text-align:right;
+	
+}
