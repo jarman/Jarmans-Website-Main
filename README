@@ -1,0 +1,43 @@
+BASIC STRUCTURE:
+
+=======================BACKEND==========================
+
+website.py--------------------------------------------
+- the starting point for the website
+- functions which are called when a page loads
+- controls interactions with the database
+- documentation for format is web.py
+  http://webpy.org/
+
+1. the urls at the top match a url address to a class
+2. the POST function of each class handles the generation of a page
+3. web.input is used to get any arguments in the url after the ?
+   eg. for jarmanrogers.com/music?pl=ABCD the web.input.pl would = ABCD
+4. perform any setup/DB calls for the page to be rendered
+5. pass the function to a template in the templates folder
+
+pyItunes/XMLLibraryParser.py-----------------------------
+- reads in the itunes Music Library into python
+- uses basic python (not part of web.py)
+- is called in the website.py to help put stuff in the database
+
+
+=======================FRONTEND TEMPLATES (HTML)==========================
+
+main.html------------------------------------------------
+- the shell of the website, forms the top and bottom of every page
+- other templates are inserted inside the middle of this template
+
+music.html------------------------------------------------
+- the inner portion of the music app
+
+=======================FRONTEND JS==========================
+
+mPlayerControls.js
+- the functions related to controling the media player
+
+
+
+
+
+
