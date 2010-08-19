@@ -78,8 +78,8 @@
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
 	-webkit-transition-duration: 0.2s;
-	cursor: hand;
-	z-index: 2;
+	cursor: pointer;
+	z-index: 5;
 	border: 1px solid #797770;
 	-webkit-box-shadow: 0px 0px 3px rgba(0,0,0,0.5);
 	-moz-box-shadow: 0px 0px 3px rgba(0,0,0,0.5);
@@ -198,6 +198,26 @@
 	
 }
 
+#sidebarContent #allPlaylists {
+	margin: 0px -20px 0px -60px;
+}
+
+#sidebarContent #allPlaylists li{
+	padding-left: 60px;
+}
+
+#sidebarContent .playlist a {
+	font-weight: normal !important;
+}
+
+#sidebarContent .folderContents {
+	height:0px;
+	opacity:0;
+	overflow:hidden;
+	--webkit-transition: all 0.5s ease;
+	padding-left:15px;
+}
+
 #curPl {
 	background-color: #B9B7B0;
 	color: #50463d;
@@ -215,10 +235,6 @@
 
 #curPl a:hover {
 	color: black;
-}
-
-#curSong {
-	background-color: #D9D7D0;
 }
 
 #searchBox {
@@ -254,22 +270,6 @@
 #searchClear:hover {
 	cursor: pointer;
 	cursor: hand;
-}
-
-.folder {
-	height:0px;
-	opacity:0;
-	overflow:hidden;
-	margin: 0px -20px 0px -20px;
-	--webkit-transition: all 0.5s ease;
-}
-
-.folder a{
-	padding-left: 30px;
-	font-weight: normal !important;
-}
-
-#typeSelect{
 }
 	
 #typeSelect ul{
@@ -350,6 +350,10 @@
 	padding:0px;
 }
 
+#curSong {
+	background-color: #D9D7D0;
+}
+
 #volumePopover {
 	height: 50px;
 	width: 106px;
@@ -377,18 +381,19 @@
 	font-weight: bolder;
 }
 
-#volumeOuter {
+#volumePopover #volumeOuter {
 	width: 100px;
 	height: 10px;
 	padding: 3px;
 	border: 1px solid white;
 	margin-top: 10px;
 }
-#volumeInner {
+
+#volumePopover #volumeInner {
 	width: 100px;
 	height: 10px;
 	background-color: white;
-}
+}#000000
 
 
 #backdrop {	
@@ -404,28 +409,98 @@
 	z-index: 3;
 }
 
-#foreground {
-	background-color: #444444;
+#libraries {
+	display: none;
+	position: absolute;
+	background-color: black;
+	filter:
+		progid:DXImageTransform.Microsoft.Alpha(opacity=70);
+	background-color: rgba(0,0,0,0.7);
 	color: #B9B7B0;
-	text-shadow: 0px -1px 1px black;
-	border: 2px solid black;
-	border-top-color: #B9B7B0;
-	border-bottom-color: #444;
-	background: -webkit-gradient(linear, left top, left bottom, from(#444), to(black));
-	background: -moz-linear-gradient(top, #444, black);
-	padding: 20px;
+	width: 850px;
+	margin-left: -20px;
+	margin-top: -20px;
+	padding-top: 0px;
+	text-align: center;
+	vertical-align: middle;
+	z-index: 4;
+}
+
+#libraries h2 {
+	text-shadow: 0px 0px 8px black;
+}
+
+#libraries .libButton{
+	background-color: #B9B7B0;
+	color: #50463d;
+	background: -webkit-gradient(linear, left bottom, left top, color-stop(0.50, #999790), color-stop(0.55, #b9b7b0), to(#E9E7E0));
+	background: -moz-linear-gradient(bottom, #999790 50%, #b9b7b0 55%, #E9E7E0);
+	filter: progid:DXImageTransform.Microsoft.gradient(enabled='true', startColorstr=#E9E7E0, endColorstr=#999790);
+	text-shadow: 0px 1px 1px rgba(255,255,255,0.6);
+	border-width: 0px;
+	border: solid black 1px;
+	display: block;
+	padding: 5px;
+	width: 300px;
+	margin: 0px 0px 20px 273px;
+	border-radius: 5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius: 5px;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+#libraries .libButton:hover{
+	color: black;
+}
+
+#libraries .libName {
+	font-weight: bold;
+}
+
+#libraries .libTime{
+	font-size: smaller;
+}
+
+#libraries #libSelected {
+	background: -webkit-gradient(linear, left top, left bottom, from(#595750), color-stop(0.15, #797770), to(#999790)) !important; 
+	background: -moz-linear-gradient(top, #595750, #797770 15%, #999790) !important; 
+	background-color: #999790;
+	color: #3D332A !important;
+}
+
+#libraries #libSelected .libName {
+	color: #E9E7E0;
+	text-shadow: 0px -1px 1px rgba(0,0,0,0.6);
+	font-weight: bold;
+}
+
+#libraries #libClose {
+	cursor: pointer;
+	position: absolute;
+	margin-top: 10px;
+	margin-left: 820px;
+}
+
+#reloadButton {
+	background-color: #B9B7B0;
+	color: #50463d;
+	background: -webkit-gradient(linear, left bottom, left top, color-stop(0.50, #999790), color-stop(0.55, #b9b7b0), to(#E9E7E0));
+	background: -moz-linear-gradient(bottom, #999790 50%, #b9b7b0 55%, #E9E7E0);
+	filter: progid:DXImageTransform.Microsoft.gradient(enabled='true', startColorstr=#E9E7E0, endColorstr=#999790);
+	text-shadow: 0px 1px 1px rgba(255,255,255,0.6);
+	border-width: 0px;
+	border: 1px solid #898780;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	margin-top: -70px;
-	margin-left: -220px;
-	height: 100px;
-	width: 400px;
-	text-align: center;
-	z-index: 4;
+	padding: 1px;
+	margin: 10px 0px 10px;
+	cursor: pointer;
+}
+
+#reloadButton:hover {
+	color: black;
 }
 
 .textBox {

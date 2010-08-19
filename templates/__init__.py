@@ -27,31 +27,6 @@ def about():
 
 about = CompiledTemplate(about, 'templates/about.html')
 
-def albums (name, albums):
-    __lineoffset__ = -3
-    loop = ForLoop()
-    self = TemplateResult(); extend_ = self.extend
-    extend_([u'\n'])
-    extend_([u'<html>\n'])
-    extend_([u'<h2>', escape_(name, True), u'</h2>\n'])
-    extend_([u"<ul id='sidebarContent'>\n"])
-    items = albums.items();
-    items.sort()
-    for folder, folderContents in loop.setup(items):
-        extend_([u'    <li><a onclick="return openFolder(event, \'', escape_(folder, True), u'\')" href=\'blah.html\'>', escape_(folder, True), u'</a></li>\n'])
-        extend_([u"    <div class='folder' id='", escape_(folder, True), u"'>\n"])
-        extend_([u'            <ul>\n'])
-        for pl in loop.setup(folderContents):
-            extend_(['            ', u'    <li><a onClick=\'return getContent(event, "', escape_(name, True), u'", "', escape_(pl, True), u'")\' href="music.html?', escape_(name, True), u'=', escape_(pl, True), u'">', escape_(pl, True), u'</a></li>\n'])
-        extend_([u'            </ul>\n'])
-        extend_([u'    </div>\n'])
-    extend_([u'</ul>\n'])
-    extend_([u'</html>\n'])
-
-    return self
-
-albums = CompiledTemplate(albums, 'templates/albums.html')
-
 def blog (posts, user, postOffset, morePosts):
     __lineoffset__ = -3
     loop = ForLoop()
@@ -89,7 +64,7 @@ def blog (posts, user, postOffset, morePosts):
     extend_([u'        </div>\n'])
     extend_([u"        <div id='sidebar' style='float:right'>                  \n"])
     extend_([u'                <h2>Welcome</h2>\n'])
-    extend_([u"                <p>This website is a repository for things i'm working on. Have a look around and let me know what you think.</p>\n"])
+    extend_([u"                <p>This website is a repository for things I'm working on. Have a look around and let me know what you think.</p>\n"])
     extend_([u"                <p>I've been doing a lot of work on the audio player recently, so it's worth a look I think.</p>\n"])
     extend_([u'        </div>\n'])
     extend_([u'</div>\n'])
@@ -99,7 +74,7 @@ def blog (posts, user, postOffset, morePosts):
 
 blog = CompiledTemplate(blog, 'templates/blog.html')
 
-def main (curTab, content):
+def main (curTab, content, users):
     __lineoffset__ = -3
     loop = ForLoop()
     self = TemplateResult(); extend_ = self.extend
@@ -125,7 +100,11 @@ def main (curTab, content):
     extend_([u'                </div>\n'])
     extend_([u'                ', escape_(content, True), u'\n'])
     extend_([u"                <div id='footer'>\n"])
-    extend_([u'                        design by jarman rogers \n'])
+    extend_([u"                        <div id='credit'>design by jarman rogers </div>\n"])
+    if (users.get_current_user()):
+        extend_(['                        ', u"    <div id='login'><a href='", escape_((users.create_logout_url("/" + curTab)), True), u"' >logout ", escape_(users.get_current_user().nickname(), True), u'</a></div> \n'])
+    else:
+        extend_(['                        ', u"    <div id='login'><a href='", escape_((users.create_login_url("/" + curTab)), True), u"'>login</a></div> \n"])
     extend_([u'                </div>\n'])
     extend_([u'        </div>\n'])
     extend_([u'        <!--[if IE]>\n'])
@@ -142,7 +121,7 @@ def main (curTab, content):
 
 main = CompiledTemplate(main, 'templates/main.html')
 
-def music (playlists, songs, title='.Recently Added'):
+def music (libraries, users):
     __lineoffset__ = -3
     loop = ForLoop()
     self = TemplateResult(); extend_ = self.extend
@@ -165,38 +144,33 @@ def music (playlists, songs, title='.Recently Added'):
     extend_([u"        <div id ='mediaSidebar'>\n"])
     extend_([u"                <div id='typeSelect'>\n"])
     extend_([u'                        <ul>\n'])
-    extend_([u'                                <li><a href=\'#\' id=\'typeSelected\' onclick="return changeType(event, \'Playlist\');">Playlists</a></li><li><a href=\'#\' onclick="return changeType(event, \'artists\');">Artists</a></li><li><a href=\'#\' onclick="return changeType(event, \'albums\');">Albums</a></li>\n'])
+    extend_([u'                                <li><a href=\'#\' id=\'typeSelected\' onclick="return changeType(event, \'playlist\');">Playlists</a></li><li><a href=\'#\' onclick="return changeType(event, \'artists\');">Artists</a></li><li><a href=\'#\' onclick="return changeType(event, \'albums\');">Albums</a></li>\n'])
     extend_([u'                        </ul>\n'])
     extend_([u'                </div>\n'])
     extend_([u"                <div id='searchBox'><input type='text' id='searchText' onKeyUp='search(event)'/><canvas id='searchClear' onClick='clearSearch(event)' height='12' width='12'></canvas></div>\n"])
     extend_([u"                <div id='sidebarContent'>\n"])
-    extend_([u'                        <h2>Playlists</h2>\n'])
-    extend_([u"                        <ul id='sidebarContent'>\n"])
-    for folder in loop.setup(playlists):
-        extend_(['                        ', u'    <li><a onclick="return openFolder(event, \'', escape_(folder[1], True), u'\')" href=\'blah.html\'>', escape_(folder[0], True), u'</a></li>\n'])
-        extend_(['                        ', u"    <div class='folder' id='", escape_(folder[1], True), u"'>\n"])
-        extend_(['                        ', u'            <ul>\n'])
-        for pl in loop.setup(folder[2]):
-            if (title == pl[0]):
-                extend_(['                                        ', u'    <li id=\'curPl\'><a onClick=\'return getContent(event, "Playlist", "', escape_(pl[1], True), u'")\' href="music.html?Playlist=', escape_(pl[1], True), u'">', escape_(pl[0], True), u'</a></li> \n'])
-            else:
-                extend_(['                                        ', u'    <li><a onClick=\'return getContent(event, "Playlist", "', escape_(pl[1], True), u'")\' href="music.html?Playlist=', escape_(pl[1], True), u'">', escape_(pl[0], True), u'</a></li>\n'])
-        extend_(['                        ', u'            </ul>\n'])
-        extend_(['                        ', u'    </div>\n'])
-    extend_([u'                        </ul>\n'])
     extend_([u'                </div>\n'])
-    extend_([u"                <button type='button' id='reloadButton' style='display:none' onclick='return(reloadLibrary())'>Reload Library</button>\n"])
+    extend_([u"                <div id='reloadButton' onclick='return(changeLibrary(event))'>Change Library</div>\n"])
     extend_([u'        </div>\n'])
     extend_([u"        <div id='main'>\n"])
-    extend_([u'                <h2>', escape_(title, True), u'</h2>\n'])
-    extend_([u'                        <ul>\n'])
-    for name in loop.setup(songs):
-        extend_(['                        ', u"    <li><a onclick='return playSong(", escape_(loop.index0, True), u', event)\' href="', escape_(name[0], True), u'">', escape_(loop.index, True), u'. ', escape_(name[1], True), u' - ', escape_(name[2], True), u'</a></li>\n'])
-    extend_([u'                        </ul>\n'])
+    extend_([u'                <h2>Loading...</h2>\n'])
     extend_([u'        </div>\n'])
     extend_([u"        <div id='volumePopover'>Volume<div id='volumeOuter'><div id='volumeInner'></div></div></div>\n"])
     extend_([u'</div>\n'])
     extend_([u"<div id='mPlayerObj'> </div>\n"])
+    extend_([u"<div id='libraries'> \n"])
+    extend_([u'        <canvas id="libClose" height=20 width=20 onclick="libraries.style.display = \'none\';"></canvas>\n'])
+    extend_([u'        <h2>Please select a library:</h2>\n'])
+    for library in loop.setup(libraries):
+        if library.user and not (users.get_current_user() and library.user == users.get_current_user().email()):
+            loginNeeded = 'true'
+        else:
+            loginNeeded = 'false'
+        extend_(['        ', u'    <div class=\'libButton\' onclick=\'return selectLibrary("', escape_((library.name), True), u'", ', escape_(loginNeeded, True), u")'>\n"])
+        extend_(['        ', u"            <div class='libName'>", escape_((library.name), True), u'</div>\n'])
+        extend_(['        ', u"            <div class='libTime'>last checkin ", escape_(library.dateString, True), u'</div>\n'])
+        extend_(['        ', u'    </div>\n'])
+    extend_([u'</div> \n'])
     extend_([u'<script type="text/javascript" src="static/jquery.min.js"></script>\n'])
     extend_([u'<script type="text/javascript" src="static/jquery.jplayer.min.js"></script>\n'])
     extend_([u'<script type="text/javascript" src="static/mPlayerButtons.js"></script>\n'])
@@ -206,23 +180,6 @@ def music (playlists, songs, title='.Recently Added'):
 
 music = CompiledTemplate(music, 'templates/music.html')
 
-def playlistsxml (playlists):
-    __lineoffset__ = -3
-    loop = ForLoop()
-    self = TemplateResult(); extend_ = self.extend
-    extend_([u'\n'])
-    extend_([u'<playlists>\n'])
-    for folder in loop.setup(playlists):
-        extend_([u'    <folder id="', escape_(folder[1], True), u'" name="', escape_(folder[0], True), u'">\n'])
-        for pl in loop.setup(folder[2]):
-            extend_(['    ', u'    <playlist id="', escape_(pl[1], True), u'" name="', escape_(pl[0], True), u'" />\n'])
-        extend_([u'    </folder>\n'])
-    extend_([u'</playlists>\n'])
-
-    return self
-
-playlistsxml = CompiledTemplate(playlistsxml, 'templates/playlistsxml.xml')
-
 def projects():
     __lineoffset__ = -4
     loop = ForLoop()
@@ -230,7 +187,7 @@ def projects():
     extend_([u"<div id='content'>\n"])
     extend_([u'        <h2>Projects</h2>\n'])
     extend_([u"        <div class='post'>\n"])
-    extend_([u"                <a href='music'>iTunes Web App</a>\n"])
+    extend_([u"                <a href='http://github.com/jarman/Jarman-s-Website'>iTunes Web App - sourcecode via github</a>\n"])
     extend_([u"                <p>I wanted a way to access my music at work and didn't like the existing solutions I found, so i built one. \n"])
     extend_([u"                It tends to work best in newer versions of Chrome/Safari/Firefox. Opera and IE kind of work but don't look quite the same.</p>\n"])
     extend_([u'                <p>Some Features:</p>\n'])
@@ -287,61 +244,4 @@ def random_circles():
     return self
 
 random_circles = CompiledTemplate(random_circles, 'templates/random_circles.html')
-
-def search (search, songs, titles):
-    __lineoffset__ = -3
-    loop = ForLoop()
-    self = TemplateResult(); extend_ = self.extend
-    extend_([u'\n'])
-    extend_([u'<html>\n'])
-    extend_([u"        <h1 style='display:none'>", escape_(search, True), u'</h1>\n'])
-    extend_([u"        <h2>Search for '", escape_(search, True), u"'</h2>\n"])
-    i = 0
-    for title in loop.setup(titles):
-        extend_([u'    <h2>', escape_(title, True), u'</h2>\n'])
-        extend_([u'            <ul>\n'])
-        for name in loop.setup(songs[loop.index0]):
-            extend_(['            ', u"    <li><a class='songLink' onclick='return playSong(", escape_(i, True), u', event)\' href="', escape_(name[0], True), u'">', escape_(loop.index, True), u'. ', escape_(name[1], True), u' - ', escape_(name[2], True), u'</a></li>\n'])
-            i += 1;
-        extend_([u'            </ul>\n'])
-    extend_([u'</html>                         \n'])
-
-    return self
-
-search = CompiledTemplate(search, 'templates/search.html')
-
-def songs (songs, title):
-    __lineoffset__ = -3
-    loop = ForLoop()
-    self = TemplateResult(); extend_ = self.extend
-    extend_([u'\n'])
-    extend_([u'<html>\n'])
-    extend_([u'<h2>', escape_(title, True), u'</h2>\n'])
-    extend_([u'        <ul>\n'])
-    for name in loop.setup(songs):
-        extend_(['        ', u"    <li><a class='songLink' onclick='return playSong(", escape_(loop.index0, True), u', event)\' href="', escape_(name[0], True), u'">', escape_(loop.index, True), u'. ', escape_(name[1], True), u' - ', escape_(name[2], True), u'</a></li>\n'])
-    extend_([u'        </ul>\n'])
-    extend_([u'</html>                         \n'])
-
-    return self
-
-songs = CompiledTemplate(songs, 'templates/songs.html')
-
-def songsxml (songs, title):
-    __lineoffset__ = -3
-    loop = ForLoop()
-    self = TemplateResult(); extend_ = self.extend
-    extend_([u'\n'])
-    extend_([u'<songs>\n'])
-    extend_([u'<title>', escape_(title, True), u'</title>\n'])
-    for name in loop.setup(songs):
-        extend_([u'    <song>\n'])
-        extend_([u'            <url>', escape_(name[0], True), u'</url>\n'])
-        extend_([u'            <name>', escape_(loop.index, True), u'. ', escape_(name[1], True), u' - ', escape_(name[2], True), u'</name>\n'])
-        extend_([u'    </song>\n'])
-    extend_([u'</songs>                                \n'])
-
-    return self
-
-songsxml = CompiledTemplate(songsxml, 'templates/songsxml.xml')
 

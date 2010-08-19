@@ -192,3 +192,22 @@ h1 a:hover {
 	font-size: smaller;
 	clear: both;
 }
+
+#footer #credit{
+	display:inline;
+}
+
+#footer #login {
+	float:right;
+	display: inline-block;
+}
+
+#footer #login a {
+	color: #A9A7A0;
+	text-shadow: 0px -1px 1px black;
+	font-weight: bold;
+}
+
+#footer #login a:hover {
+	color: #E9E7E0;
+}

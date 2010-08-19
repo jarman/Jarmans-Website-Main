@@ -1,378 +1,145 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import web
-import logging
 import datetime
-from pyItunes import *
 from google.appengine.ext import db
 from google.appengine.api import users
-from google.appengine.runtime import DeadlineExceededError
+from google.appengine.api import urlfetch
 
 urls = (
-    '/songs.(.*)', 'songs',
-    '/artists.(.*)', 'artists',
-    '/albums.(.*)', 'albums',
-    '/clear', 'clearLibrary',
-    '/load(.*)', 'loadDb',
-    '/login', 'login',
+    '/songs(.*)', 'proxy',
+    '/artists(.*)', 'proxy',
+    '/albums(.*)', 'proxy',
+    '/playlists(.*)', 'proxy',
+    '/register', 'registerClient',
+    '/login(.*)', 'login',
     '/projects(.*)', 'projects',
     '/about', 'about',
     '/music', 'music',
-    '/playlists', 'playlists',
+    '/selectLibrary', 'selectLibrary',
     '/(.*)', 'blog'
 )
 
 render = web.template.render('templates/')
 
-maxDbEntry = 0;
-newEntries = ''
-maxDate = None
-
+# holds the information related to a blog post entry
 class blogPost(db.Model):
     title = db.StringProperty(required=True)
     message = db.TextProperty(required=True)
     when = db.DateTimeProperty(auto_now_add=True)
     who = db.StringProperty()
 
-class songEntry(db.Model):
-    name = db.StringProperty()
-    artist = db.StringProperty()
-    album = db.StringProperty()
-    filetype = db.StringProperty()
-    location = db.TextProperty()
-    trackNumber = db.IntegerProperty()
-    modified = db.DateTimeProperty()
+# holds the information about an itunes library
+class libraries(db.Model):
+    name = db.StringProperty(required=True)
+    url = db.StringProperty(required=True)
+    lastAvailable = db.DateTimeProperty(required=True)
+    user = db.StringProperty()
+    dateString = db.StringProperty()
 
-class playlistEntry(db.Model):
-    songs = db.StringListProperty()
-    parentID = db.StringProperty()
-    name = db.StringProperty()
-    folder = db.BooleanProperty()
-    
-def numeric_compare(x, y):
-    if x[0] > y[0]:
-       return 1
-    elif x[0] == y[0]:
-       return 0
-    else:  #x < y
-       return -1
-
-def putSongsInDatabase(lib, post):
-    global maxDbEntry, newEntries, maxDate
-    i = 0
-
-    if (not maxDate):
-        dateQuery = songEntry.gql("ORDER BY modified DESC")
-        if (dateQuery.count(1) == 1):
-            maxDate = dateQuery.get().modified
-        else:
-            maxDate = datetime.datetime.min
-            
-    maxDate = datetime.datetime.min
-    
-    for song,attributes in lib.songs.iteritems():
-        if (i == maxDbEntry):
-            dateModified = datetime.datetime.strptime(attributes.get('Date Modified'), '%Y-%m-%dT%H:%M:%SZ')
-            if (maxDate < dateModified):
-
-                entry = songEntry.get_by_key_name(song)
-
-
-                if (not entry or (not entry.modified) or (entry.modified < dateModified)):
-
-                    if (not entry):
-                        entry = songEntry(key_name = song)
-                        if (attributes.get('Artist')):
-                            postLine = attributes.get('Artist') + ' - ' + attributes.get('Name') + '<br>'
-                        else:
-                             postLine = attributes.get('Name') + '<br>'
-                        newEntries += postLine
-
-                    # add a new entry
-                    if (attributes.get('Name')):
-                        entry.name = unicode(attributes.get('Name'), 'latin-1')
-                    if (attributes.get('Artist')):
-                        entry.artist = unicode(attributes.get('Artist'), 'latin-1')
-                    if (attributes.get('Album')):
-                        entry.album = unicode(attributes.get('Album'), 'latin-1')
-                    if (attributes.get('Kind')):
-                        entry.filetype = attributes.get('Kind')
-                        
-                    localLoc = attributes.get('Location')
-                    localFolder = localLoc[localLoc.find('iTunes%20Music/')+15:]
-                    entry.location = unicode("http://jarman.homedns.org:82/" + localFolder, 'latin-1')
-                    entry.modified = dateModified
-
-                    if (attributes.get('Track Number')):
-                        entry.trackNumber = int(attributes.get('Track Number'))
-                    entry.put()
-
-                    if (i % 500 == 0):
-                        logging.info("records processed: %d of %d", i, len(lib.songs))
-            maxDbEntry += 1
-        i += 1
-
-    if newEntries != '' and post == 'True':
-        post = blogPost(
-            title = 'Newly Added Songs',
-            message = newEntries,
-            who = 'the music app')
-        post.put();
-        newEntries = ''
-
-def putPlaylistsInDatabase(lib):
-    logging.info("Putting Playlists into Library")
-    
-    for playlist,attributes in lib.playlists.iteritems():
-        entry = playlistEntry.get_or_insert(attributes.get('Playlist Persistent ID'))
-
-        entry.name = attributes.get('Name')
-        entry.songs = attributes.get('songs')
-
-        if (attributes.get('Parent Persistent ID')):
-            entry.parentID = attributes.get('Parent Persistent ID')
-        
-        if attributes.get('Folder') == '':
-            entry.folder = True
-        else:
-            entry.folder = False
-
-        entry.put();
-    
-    logging.info("Finished putting Playlists into Library")
-
-def clearDatabase(dbToClear):
-    while (dbToClear.all().count(1) == 1):
-        db.delete(dbToClear.all().fetch(500))
-
-def getPlaylistContents(plid):    
-    songs = [];
-    logging.info("starting to build result")
-    pl = playlistEntry.get_by_key_name(plid)
-    entries = songEntry.get_by_key_name(pl.songs)
-    for song in entries:
-        songs.append([song.location, song.artist, song.name])
-    
-    logging.info("finished building result")
-        
-    return songs, pl.name
-
-def getArtistSongs(artist):    
-    songs = [];
-    query = songEntry.gql('WHERE artist = :1 '
-                          'ORDER BY album, trackNumber ASC',
-                          artist)
-    for song in query:
-        songs.append([song.location, song.artist, song.name])
-    
-    return songs
-
-def getAlbumSongs(album):    
-    songs = [];
-    query = songEntry.gql('WHERE album = :1 '
-                          'ORDER BY trackNumber ASC',
-                          album)
-    for song in query:
-        songs.append([song.location, song.artist, song.name])
-    
-    return songs
-
-def getPlaylists():
-    playlists = []
-    folders = []
-
-    folderEntries = playlistEntry.gql('WHERE folder = True '
-                                      'ORDER BY name')
-    playlistEntries = playlistEntry.gql('WHERE folder = False '
-                                      'ORDER BY name')
-
-    for folderEntry in folderEntries:
-        folders.append([folderEntry.name, folderEntry.key().name(), []]);
-    for entry in playlistEntries:
-        for folder in folders:
-            if (folder[1] == entry.parentID):
-                folder[2].append([entry.name, entry.key().name()])
-    return folders
-
-def getArtists():
-    letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'] 
-    artistNames = { 'A':[], 'B':[], 'C':[], 'D':[], 'E':[], 'F':[], 'G':[], 'H':[], 'I':[], 'J':[], 'K':[], 'L':[], 'M':[], 'N':[], 'O':[], 'P':[], 'Q':[], 'R':[], 'S':[], 'T':[], 'U':[], 'V':[], 'W':[], 'X':[], 'Y':[], 'Z':[], '#':[]}  
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE artist > :1 AND artist < :2 "
-                              "ORDER BY artist ASC",
-                              letters[i], letters[i+1])
-        for entry in query:
-            if (0 == artistNames[letters[i]].count(entry.artist)):
-                artistNames[letters[i]].append(entry.artist);
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE artist < 'A'"
-                              "ORDER BY artist ASC")
-        for entry in query:
-            if ((entry.artist != '') and (0 == artistNames['#'].count(entry.artist))):
-                artistNames['#'].append(entry.artist);
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE artist > 'Z' "
-                              "ORDER BY artist ASC")
-        for entry in query:
-            if (0 == artistNames['Z'].count(entry.artist)):
-                artistNames['Z'].append(entry.artist);
-    return artistNames
-
-    
-
-def getAlbums():
-    letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'] 
-    artistNames = { 'A':[], 'B':[], 'C':[], 'D':[], 'E':[], 'F':[], 'G':[], 'H':[], 'I':[], 'J':[], 'K':[], 'L':[], 'M':[], 'N':[], 'O':[], 'P':[], 'Q':[], 'R':[], 'S':[], 'T':[], 'U':[], 'V':[], 'W':[], 'X':[], 'Y':[], 'Z':[], '#':[]}  
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE album > :1 AND album < :2 "
-                              "ORDER BY album ASC",
-                              letters[i], letters[i+1])
-        for entry in query:
-            if (0 == artistNames[letters[i]].count(entry.album)):
-                artistNames[letters[i]].append(entry.album);
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE album < 'A'"
-                              "ORDER BY album ASC")
-        for entry in query:
-            if ((entry.album != '') and (0 == artistNames['#'].count(entry.album))):
-                artistNames['#'].append(entry.album);
-    for i in range(0,len(letters)-1):
-        query = songEntry.gql("WHERE album > 'Z' "
-                              "ORDER BY album ASC")
-        for entry in query:
-            if (0 == artistNames['Z'].count(entry.album)):
-                artistNames['Z'].append(entry.album);
-    return artistNames
-    
-
-def findSongs(s):
-    
-    cats = ['name', 'artist', 'album']
-    titles = ['Name', 'Artist', 'Album']
-    songs = [[], [], []]
-    #s = s.encode('latin-1').lower();
-
-    for i in range(len(cats)):
-        entries = songEntry.all()
-        entries.filter(cats[i], s)
-        #entries = songEntry.gql('WHERE album = :1 ',
-        #                        s)
-
-        for entry in entries:
-            songs[i].append([entry.location, entry.artist, entry.name])
-
-    return songs, titles
-
-class songs:    
+class proxy:    
     def GET(self, name):
         web.header('Content-Type', 'text/xml')
-        if web.input(Playlist='null').Playlist != 'null':
-            songs, plName = getPlaylistContents(web.input().Playlist)
-            if name == 'xml':
-                return render.songsxml(songs, plName)
+        
+        # note that naming a library "null" will cause errors
+        c = web.cookies(library="null")
+        if (c.library != "null"):
+            # Get the URL of the library in use
+            q = db.GqlQuery("SELECT * FROM libraries WHERE name = :1",
+                            c.library)
+            existingEntries = q.fetch(1)
+            if (len(existingEntries) < 1):
+                return '<html>library not found</html>'
+            
+            lib = existingEntries[0]
+
+            # if the library doesn't require a username or the user is correct
+            if (lib.user == "" or lib.user == None or
+                (users.get_current_user() and lib.user == users.get_current_user().email())):
+
+                #recreate the query using the same things passed in
+                wholeURL = "http://" + lib.url + web.ctx.fullpath
+                result = urlfetch.fetch(url=wholeURL, deadline=10)
+                return result.content
+            elif not users.get_current_user():
+                return '<html>please login to use this library</html>'
             else:
-                return render.songs(songs, plName);
-        if web.input(Artists='null').Artists != 'null':
-            artist = web.input().Artists
-            songs = getArtistSongs(artist)
-            return render.songs(songs, artist);
-        if web.input(Albums='null').Albums != 'null':
-            album = web.input().Albums
-            songs = getAlbumSongs(album)
-            return render.songs(songs, album);
-        if len(web.input(search='null').search) > 1:
-            songs, titles = findSongs(web.input().search)
-            return render.search(web.input().search, songs, titles);
+                return '<html>' + users.get_current_user().email() + ' is not authorized for this library</html>'
         else:
-            return('invalid');
-
-class artists:    
-    def GET(self, name):
-        return render.albums('Artists', getArtists());
-
-class albums:    
-    def GET(self, name):
-        return render.albums('Albums', getAlbums());
-
-class clearLibrary:
-    def GET(self):
-        clearDatabase(songEntry)
-        return('cleared');
-
-class loadDb:
-    def GET(self, loadType):
-        global lib, maxDbEntry
-        if (loadType == 'Library'):
-            if (lib == None):
-                logging.info('loading library into memory')
-                lib = XMLLibraryParser("iTunes Music Library.xml")
-                logging.info('Finished loading library into memory')
-            return('Finished loading library into memory.');
-        elif (loadType == 'Songs'):
-            if (web.input(pos='null').pos != 'null'):
-                maxDbEntry = int(web.input().pos)
-            try:
-                if (lib == None):
-                    logging.info('loading library into memory')
-                    lib = XMLLibraryParser("iTunes Music Library.xml")
-                    logging.info('Finished loading library into memory')
-                putSongsInDatabase(lib, web.input(post='True').post)
-
-                return('Finished loading songs into DB');
-            except DeadlineExceededError:
-                return maxDbEntry
-        elif (loadType == 'Playlists'):
-            try:
-                if (lib == None):
-                    logging.info('loading library into memory')
-                    lib = XMLLibraryParser("iTunes Music Library.xml")
-                    logging.info('Finished loading library into memory')
-                putPlaylistsInDatabase(lib)
-
-                return('Finished Loading playlists into DB');
-            except DeadlineExceededError:
-                return('couldnt finish playlist load')
-        else:
-            #Load both the songs and the playlists into the DB
-            if (web.input(pos='null').pos != 'null'):
-                maxDbEntry = int(web.input().pos)
-            try:
-                if (lib == None):
-                    logging.info('loading library into memory')
-                    lib = XMLLibraryParser("iTunes Music Library.xml")
-                    logging.info('Finished loading library into memory')
-                putSongsInDatabase(lib, web.input(post='True').post)
-                putPlaylistsInDatabase(lib)
-
-                return('Finished loading everything into DB');
-            except DeadlineExceededError:
-                return maxDbEntry
-
+            # return empty html if the library is not found
+            return '<html></html>'
 
 class login:
-    def GET(self):
-        raise web.seeother(users.create_login_url(''))
+    def GET(self, ref):
+        # use app engine's build in login method
+        raise web.seeother(users.create_login_url(ref))
 
+class registerClient:
+    def GET(self):
+
+        # first attempt to find the user library in the database
+        q = db.GqlQuery("SELECT * FROM libraries WHERE name = :1",
+                            web.input().name)
+        existingEntry = q.fetch(1);
+        if (len(existingEntry) > 0):
+            # the library was found in the DB, update their entry
+            # use the ip address if the url is not provided
+            existingEntry[0].url = web.input(url=web.ctx.ip).url
+            existingEntry[0].lastAvailable = datetime.datetime.now()
+            db.put(existingEntry);
+            return '<html>Updated Entry</html>'
+        else:
+            # the library was not found in the DB, create a new entry
+            entry = libraries(
+                name = web.input().name,
+                # use the ip address if the url is not provided
+                url = web.input(url=web.ctx.ip).url,
+                # use an empty string if no user was provided
+                user = web.input(user='').user,
+                lastAvailable = datetime.datetime.now())
+            entry.put();
+            return '<html>Added new entry</html>'
+        
 class projects:
     def GET(self, subpage):
         if (subpage == '/random_circles.html'):
             contents = render.random_circles()
         else:
             contents = render.projects()
-        return render.main('projects', contents)
+        return render.main('projects', contents, users)
 
 class about:
     def GET(self):
-        return render.main('about', render.about())
-
-class playlists:
-    def GET(self):
-        web.header('Content-Type', 'text/xml')
-        return render.playlistsxml(getPlaylists())
+        return render.main('about', render.about(), users)
 
 class music:    
     def GET(self):
-        return render.main('music', render.music(getPlaylists(), [], "Loading..."));
+        # get the libraries from the db
+        libraries = db.GqlQuery(
+            'SELECT * FROM libraries '
+            'ORDER BY lastAvailable DESC')
+        for library in libraries:
+            # construct a string to indicate how long since the library phoned home
+            daysAgo = datetime.datetime.now() - library.lastAvailable            
+            if (daysAgo.days > 1):
+                value = daysAgo.days
+                dateString = str(value) + " day"
+            elif (daysAgo.seconds > 3600):
+                value = daysAgo.seconds/3600
+                dateString = str(value) + " hour"
+            else:
+                value = daysAgo.seconds/60
+                dateString = str(value) + " minute"
+
+            # Add an 's' to the end of the time unit if necessary
+            if (value == 1):
+                library.dateString = dateString + " ago"
+            else:
+                library.dateString = dateString + "s ago"
+            
+            library.put()
+        return render.main('music', render.music(libraries, users), users);
 
 class blog:
     def GET(self, name):
@@ -387,7 +154,7 @@ class blog:
             user = users.get_current_user().nickname()
         else:
             user = 'Anonymous'
-        return render.main('blog', render.blog(posts, user, postOffset, morePosts));
+        return render.main('blog', render.blog(posts, user, postOffset, morePosts), users);
     
     def POST(self, name):
         post = blogPost(
@@ -399,10 +166,7 @@ class blog:
 
 app = web.application(urls, globals())
 
-lib = None;
-
 def main():
-    logging.info("Received Request")
     app.cgirun()
 
 

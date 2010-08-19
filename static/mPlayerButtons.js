@@ -250,6 +250,8 @@ function drawSearchClearButton()
 	canvas.clearRect(0,0,12,12)
 	
 	if ($id('searchText').value == '') {
+		// draw a magnifying glass
+		
 		canvas.strokeStyle = '#999790';
 		
 		//canvas.arc(4, 4, 4, 0, 2 * Math.PI, false);
@@ -264,6 +266,8 @@ function drawSearchClearButton()
 	}
 	else
 	{
+		// draw the (x) button
+		
 		canvas.fillStyle = '#B9B7B0';
 		canvas.strokeStyle = '#fff';
 		canvas.beginPath();
@@ -280,4 +284,31 @@ function drawSearchClearButton()
 		canvas.lineTo(3, 9);
 		canvas.stroke();
 	}
+}
+
+function drawLibCloseButton()
+{
+	canvas = $id("libClose").getContext('2d');
+	
+	canvas.strokeStyle = '#b9b7b0';
+	canvas.lineWidth = 2;
+	
+	canvas.shadowColor = 'black';
+	canvas.shadowBlur = 10;
+	
+	canvas.beginPath();
+	canvas.arc(10, 10, 9, 0, 2 * Math.PI, false);
+	canvas.stroke();
+	
+	canvas.beginPath();
+	canvas.moveTo(6, 6);
+	canvas.lineTo(14, 14);
+	canvas.stroke();
+	
+	canvas.beginPath();
+	canvas.moveTo(14, 6);
+	canvas.lineTo(6, 14);
+	canvas.stroke();
+	
+	
 }

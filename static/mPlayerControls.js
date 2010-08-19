@@ -496,40 +496,6 @@ function formatTime(i)
 	return t
 }
 
-
-function forceLogin()
-{
-	if (readCookie('status') != "loggedin") {
-		var newDiv = document.createElement('div');
-		newDiv.setAttribute('id', 'backdrop');
-		document.body.appendChild(newDiv);
-		
-		newDiv = document.createElement('div');
-		newDiv.setAttribute('id', 'foreground');
-		
-		newDiv.innerHTML = "<p>Please enter the password to view this page</p><form method='POST' action='music.html' onsubmit='checkPword(this)'><input type='password' class='textBox' name='pword' id='pword' size='25'></input></form>";
-		document.body.appendChild(newDiv);
-		$id('pword').focus();
-	}
-}
-
-function checkPword(form)
-{
-	if (form.pword.value == 'jarman')
-	{
-		document.body.removeChild($id('backdrop'));
-		document.body.removeChild($id('foreground'));
-		document.cookie = "status=loggedin; path=/";
-		openFolder(null, 'B8D0301FD890ED9F');
-	}
-	
-	if (window.event) {
-		window.event.returnValue = false;
-	}
-	
-	return false;
-}
-
 function readCookie(name) {
 	var nameEQ = name + "=";
 	var ca = document.cookie.split(';');
@@ -549,12 +515,18 @@ function reopenFolders() {
 		while (c.charAt(0)==' ') c = c.substring(1,c.length);
 		if (c.indexOf(nameEQ) > 0) {
 			folder = c.substring(0, c.indexOf(nameEQ));
-			//$id(folder).style.height = 'auto';
-			//height = $id(folder).offsetHeight;
-			//$id(folder).style.height = '0px';
 			if ($id(folder)) {
 				$id(folder).style.opacity = '1';
 				$id(folder).style.height = $id(folder).scrollHeight + 'px';
+				
+				// fix parent folder heights
+				curFolder = $id(folder).parentNode.parentNode;
+				while (curFolder && curFolder.className == "folderContents" && readCookie(curFolder.id) == "open") {
+					curFolder.style.height = "auto"
+					curFolder.style.height = curFolder.scrollHeight + 'px';
+					curFolder.style.opacity = '1';
+					curFolder = curFolder.parentNode.parentNode;
+				}
 			}
 		}
 	}
@@ -569,12 +541,17 @@ function openFolder(e, name){
 		document.cookie = name + "=closed; path=/";
 	}
 	else {
-		//$id(name).style.height = 'auto';
-		//height = $id(name).offsetHeight;
-		//$id(name).style.height = '0px';
 		$id(name).style.opacity = '1';
 		$id(name).style.height = $id(name).scrollHeight + 'px';
 		document.cookie = name + "=open; path=/";
+	}
+	
+	// fix parent folder heights
+	curFolder = $id(name).parentNode.parentNode;
+	while (curFolder && curFolder.className == "folderContents") {
+		curFolder.style.height = "auto"
+		curFolder.style.height = curFolder.scrollHeight + 'px';
+		curFolder = curFolder.parentNode.parentNode;
 	}
 	
 	if ($id('ieShadow')) {
@@ -709,8 +686,7 @@ function getContent(e, type, id) {
 }
 
 function updateContent(req){
-	if (req.responseText == 'invalid')
-	{
+	if (req.responseText == 'invalid') {
 		reloadLastPage()
 		return;
 	}
@@ -720,8 +696,7 @@ function updateContent(req){
 	
 	if ($id('main').getElementsByTagName('h1').length) {
 		name = $id('main').getElementsByTagName('h1')[0].innerHTML
-		if (name != readCookie('search'))
-		{
+		if (name != readCookie('search')) {
 			// this an old search that has loaded too late;
 			$id('main').innerHTML = temp;
 			return;
@@ -731,44 +706,48 @@ function updateContent(req){
 	
 	$id('main').style.opacity = 1;
 	
-	if (playedSomething)
-	{
+	if (playedSomething) {
 		songsReloaded = true;
 	}
-	else
-	{
+	else {
 		updateSongList()
 		curSongNumber = 0;
 		loadSong(false);
 	}
 	
-	if ($id('ieShadow'))
-	{
+	if ($id('ieShadow')) {
 		setTimeout(fixShadowHeight, 100);
 	}
 	
 	fixSidebarHeight();
+	highlightPlaylist();
+	
+}
+	
+function highlightPlaylist(){
 	
 	playlists = $id('sidebarContent').getElementsByTagName("li")
-	title = $id('main').getElementsByTagName("h2")[0].innerHTML
+	titleElement = $id('main').getElementsByTagName("h2")
 	
-	
-	for (i = 0; i < playlists.length; i++)
-	{	
-		temp = playlists[i].textContent || playlists[i].innerText
-		if (playlists[i].id = 'curPl') {
-			playlists[i].id = "";
-		}
-		if (temp == title)
-		{
-			playlists[i].id = 'curPl'
+	if (titleElement.length > 0) {
+		title = titleElement[0].innerHTML;
+		
+		for (i = 0; i < playlists.length; i++) {
+			temp = playlists[i].textContent || playlists[i].innerText
+			if (playlists[i].id = 'curPl') {
+				playlists[i].id = "";
+			}
+			if (temp == title) {
+				playlists[i].id = 'curPl'
+			}
 		}
 	}
 }
 
 function fixSidebarHeight()
 {
-	if ($id('main').offsetHeight > ($id('mediaSidebar').offsetHeight -35) || (($id('main').offsetHeight < ($id('mediaSidebar').offsetHeight - 35)) && $id('mediaSidebar').style.paddingBottom != '0px'))
+	if ($id('main').offsetHeight > ($id('mediaSidebar').offsetHeight -35) || 
+		(($id('main').offsetHeight < ($id('mediaSidebar').offsetHeight - 35)) && $id('mediaSidebar').style.paddingBottom != '0px'))
 	{
 		$id('mediaSidebar').style.paddingBottom = '0px';
 		if ($id('main').offsetHeight > ($id('mediaSidebar').offsetHeight - 35))
@@ -803,24 +782,28 @@ function changeType(e, type) {
 	$id('typeSelected').id = null
 	target.id = 'typeSelected';
 	
-	if (target.innerHTML == 'Playlists')
-	{
+	// first try to reload the saved content into the sidebar
+	if (target.innerHTML == 'Playlists' && sidebarPl) {
 		$id('sidebarContent').innerHTML = sidebarPl;
-		return false;
+		fixSidebarHeight();
+		highlightPlaylist();
 	}
-	else if (target.innerHTML == 'Artists' && sidebarArtists)
-	{
+	else if (target.innerHTML == 'Artists' && sidebarArtists) {
 		$id('sidebarContent').innerHTML = sidebarArtists;
-		return false;
+		fixSidebarHeight();
+		highlightPlaylist();
 	}
-	else if (target.innerHTML == 'Albums' && sidebarAlbums)
-	{
+	else if (target.innerHTML == 'Albums' && sidebarAlbums) {
 		$id('sidebarContent').innerHTML = sidebarAlbums;
-		return false;
-	}	
+		fixSidebarHeight();
+		highlightPlaylist();
+	}
+	else {
+		// if there is no saved content, reload from the server
+		$id('sidebarContent').style.opacity = 0;
+		sendRequest('/' + type + '.html', updateSidebar);
+	}
 	
-	$id('sidebarContent').style.opacity = 0;
-	sendRequest('/' + type + '.html', updateSidebar);
 	document.cookie = "lastPage=" + type + "; path=/";
 	
 	e.returnValue = false;
@@ -831,14 +814,8 @@ function updateSidebar(req){
 	$id('sidebarContent').innerHTML = req.responseText;
 	$id('sidebarContent').style.opacity = 1;
 	
-	if ($id('typeSelected').innerHTML == 'Albums')
-	{
-		sidebarAlbums = $id('sidebarContent').innerHTML;
-	}
-	else if ($id('typeSelected').innerHTML == 'Artists')
-	{
-		sidebarArtists = $id('sidebarContent').innerHTML;
-	}
+	reopenFolders();
+	highlightPlaylist();
 }
 	
 function updateSongList() {
@@ -891,8 +868,18 @@ function mediaError(e)
 	}
 }
 
-function reloadLastPage()
+function loadPage()
 {
+	// Load the sidebar
+	sendRequest('/playlists.html', updateSidebar);
+	
+	reloadLastPage();
+	reopenFolders();
+	loadSong(false)
+}
+
+function reloadLastPage()
+{	
 	if (readCookie('lastPage') == 'search' && readCookie('search') && readCookie('search').length > 1)
 	{
 		id = readCookie('search');
@@ -911,27 +898,59 @@ function reloadLastPage()
 	else
 	{
 		document.cookie = "lastPage=Playlist; path=/";
-        document.cookie = "Playlist=0B1C1C648E64D1E0; path=/";
-        document.cookie = "B8D0301FD890ED9F=open; path=/";
-		sendRequest('/songs.html?Playlist=0B1C1C648E64D1E0', updateContent);
+        document.cookie = "Playlist=6FC1A60398C0CEB9; path=/";
+        document.cookie = "9F4D3B18D81B3CC1=open; path=/";
+		sendRequest('/songs.html?Playlist=6FC1A60398C0CEB9', updateContent);
 	}
-}
-
-function reloadLibrary(e)
-{
-	sendRequest('/reload.html', finishedReload);
-	
-	$id('reloadButton').style.background = "-webkit-gradient(linear, left bottom, left top, from(#444), to(#222))";
-	
-	e = e || window.event
-	e.ReturnValue = false;
-	return false;
 }
 
 function finishedReload()
 {
 	$id('reloadButton').style.background = "webkit-gradient(linear, left top, left bottom, from(#444), to(#222))";
 	alert('reload is finished');
+}
+
+function selectLibrary(lib, loginNeeded){
+	document.cookie = "library=" + lib + "; path=/";
+	if (loginNeeded) {
+		// redirect to the login page if necessary
+		window.location.href = '/login/music'
+	}
+	
+	// otherwise load the selected library
+	loadPage();
+	$id('libraries').style.display = "none";
+}
+
+function changeLibrary()
+{
+	$id('libraries').style.display = "block";
+	if ($id('mediaSidebar').scrollHeight > $id('libraries').scrollHeight){
+		$id('libraries').style.height = $id('mediaSidebar').scrollHeight + "px"
+	} else {
+		$id('mediaSidebar').style.paddingBottom = '0px';
+		$id('mediaSidebar').style.paddingBottom = ($id('libraries').scrollHeight - $id('mediaSidebar').scrollHeight) + 'px';
+	}
+	
+	if (readCookie("library")) {
+		depressSelectedLibrary(readCookie("library"));
+		$id("libClose").style.display = "block";
+	} else {
+		$id("libClose").style.display = "none";
+	}
+}
+
+function depressSelectedLibrary(lib)
+{
+	names = $id('libraries').getElementsByTagName("div");
+	for (var i = 0; i < names.length; i++) {
+		if (names[i].id == "libSelected") {
+			names[i].id = ""
+		}
+		if (names[i].innerText == lib && names[i].className == "libName") {
+			names[i].parentNode.id = "libSelected"
+		}
+	}
 }
 
 // ----------------------------------------------------------------- Helpers ---------------------------------------------------------------------------
@@ -993,13 +1012,14 @@ function drawButtons()
 	drawShuffleButton();
 	drawVolumeButton();
 	drawSearchClearButton();
+	drawLibCloseButton();
 }
 
 $(document).ready(function()
 {
 
 	//forceLogin();
-	updateSongList();
+	//updateSongList();
 	
 	mPlayer = $("#mPlayerObj");
 	
@@ -1036,14 +1056,17 @@ $(document).ready(function()
         mPlayer.jPlayer( "onSoundComplete", songEnded )
         mPlayer.jPlayer( "onProgressChange", progress )
         progress();
-        reloadLastPage();
-        reopenFolders();
-        loadSong(false)
-	 },
-	 swfPath: "static",
-	 errorAlerts: true,
-	 warningAlerts: true,
-	 nativeSupport: true,
-	 volume: 100
-	 });
+		if (readCookie('library')) {
+			loadPage();
+		}
+		else {
+			changeLibrary()
+		}
+	},
+	swfPath: "static",
+	errorAlerts: true,
+	warningAlerts: true,
+	nativeSupport: true,
+	volume: 100
+	});
 })

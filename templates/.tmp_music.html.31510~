@@ -1,4 +1,4 @@
-$def with (libraries, users)
+$def with (libraries)
 
 <link rel="stylesheet" type="text/css" href="static/mPlayer.css">
 <div id='mPlayer'>
@@ -18,13 +18,13 @@ $def with (libraries, users)
 	<div id ='mediaSidebar'>
 		<div id='typeSelect'>
 			<ul>
-				<li><a href='#' id='typeSelected' onclick="return changeType(event, 'playlist');">Playlists</a></li><li><a href='#' onclick="return changeType(event, 'artists');">Artists</a></li><li><a href='#' onclick="return changeType(event, 'albums');">Albums</a></li>
+				<li><a href='#' id='typeSelected' onclick="return changeType(event, 'Playlist');">Playlists</a></li><li><a href='#' onclick="return changeType(event, 'artists');">Artists</a></li><li><a href='#' onclick="return changeType(event, 'albums');">Albums</a></li>
 			</ul>
 		</div>
 		<div id='searchBox'><input type='text' id='searchText' onKeyUp='search(event)'/><canvas id='searchClear' onClick='clearSearch(event)' height='12' width='12'></canvas></div>
 		<div id='sidebarContent'>
 		</div>
-		<div id='reloadButton' onclick='return(changeLibrary(event))'>Change Library</div>
+		<button type='button' id='reloadButton' style='display:none' onclick='return(reloadLibrary())'>Reload Library</button>
 	</div>
 	<div id='main'>
 		<h2>Loading...</h2>
@@ -32,19 +32,10 @@ $def with (libraries, users)
 	<div id='volumePopover'>Volume<div id='volumeOuter'><div id='volumeInner'></div></div></div>
 </div>
 <div id='mPlayerObj'> </div>
-<div id='libraries'> 
-	<canvas id="libClose" height=20 width=20 onclick="libraries.style.display = 'none';"></canvas>
-	<h2>Please select a library:</h2>
-	$for library in libraries:
-		$if library.user and not (users.get_current_user() and library.user == users.get_current_user().email()):
-			$ loginNeeded = 'true'
-		$else:
-			$ loginNeeded = 'false'
-		<div class='libButton' onclick='return selectLibrary("$(library.name)", $loginNeeded)'>
-			<div class='libName'>$(library.name)</div>
-			<div class='libTime'>last checkin $library.dateString</div>
-		</div>
-</div> 
+<div id='libraries'>
+$for l in libraries:
+	<div class='libButton' onclick='return selectLibrary($(l.key()))'>$l.name</div>
+</div>
 <script type="text/javascript" src="static/jquery.min.js"></script>
 <script type="text/javascript" src="static/jquery.jplayer.min.js"></script>
 <script type="text/javascript" src="static/mPlayerButtons.js"></script>
