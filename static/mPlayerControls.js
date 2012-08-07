@@ -21,7 +21,7 @@ var prevVolume = 0;
 var timeoutID = null;
 
 
-function playSong(songNum, e) {
+function playSong(songNum, time, e) {
 	
 	if (playing && songNum == null )
 	{
@@ -46,7 +46,7 @@ function playSong(songNum, e) {
 		{
 			curSongNumber = songNum;
 			makeShuffleOrder();
-			loadSong(true);
+			loadSong(true, time);
 		}
 		
 	}
@@ -58,7 +58,7 @@ function playSong(songNum, e) {
 	return false;
 }
 
-function loadSong(autoPlay)
+function loadSong(autoPlay, startTime)
 {
 	if (shuffle) 
 	{
@@ -76,6 +76,10 @@ function loadSong(autoPlay)
 	if (autoPlay)
 	{
 		mPlayer.jPlayer("play");
+	}
+	
+	if (startTime > 0) {
+		mPlayer.jPlayer("playHeadTime", startTime);
 	}
 	
 	links = $id('main').getElementsByTagName("li"); 
@@ -96,7 +100,12 @@ function nextSong()
 	curSongNumber = (curSongNumber + 1) % songs.length
 	
 	if (playing) {
-		loadSong(true);
+		if (shuffle) {
+			$id('main').getElementsByTagName("a")[shuffleOrder[curSongNumber]].onclick()
+		}
+		else {
+			$id('main').getElementsByTagName("a")[curSongNumber].onclick()
+		}
 	}
 	else {
 		loadSong(false);
@@ -113,7 +122,12 @@ function prevSong()
 	curSongNumber = (curSongNumber - 1 + songs.length) % songs.length
 	
 	if (playing) {
-		loadSong(true);
+		if (shuffle) {
+			$id('main').getElementsByTagName("a")[shuffleOrder[curSongNumber]].onclick()
+		}
+		else {
+			$id('main').getElementsByTagName("a")[curSongNumber].onclick()
+		}
 	}
 	else {
 		loadSong(false);
@@ -317,8 +331,7 @@ function songEnded()
 	}
 	else
 	{
-		curSongNumber = (curSongNumber + 1) % songs.length
-		loadSong(true);
+		nextSong()
 	}
 }
 
@@ -379,16 +392,16 @@ function changeTime(e) {
 	playedPercent = mPlayer.jPlayer("getData", "diag.playedPercentAbsolute")
 	
 	if (mouseDown) {
-		tempPos = (playedPercent * 830/100) + (xPos - curX)
+		tempPos = (playedPercent * ($(window).width()-20)/100) + (xPos - curX)
 		
 		if (tempPos < 0) {
 			tempPos = 0;
 		}
-		else if (tempPos > 830) {
-			tempPos = 830;
+		else if (tempPos > ($(window).width()-20)) {
+			tempPos = ($(window).width()-20);
 		}
 		
-		tempTime = tempPos * duration / 830;
+		tempTime = tempPos * duration / ($(window).width()-20);
 		
 		$id("time").style.marginLeft = tempPos + 'px';
 	}
@@ -413,21 +426,21 @@ function setMouseUp(e) {
 			tempPos = offsetX;
 		}
 		else {
-			tempPos = (playedPercent * 830/100) + (xPos - curX)
+			tempPos = (playedPercent * ($(window).width()-20)/100) + (xPos - curX)
 		}
 		
 		if (tempPos < 0)
 		{
 			tempPos = 0;
 		}
-		else if (tempPos > 830)
+		else if (tempPos > ($(window).width()-20))
 		{
-			tempPos = 830;
+			tempPos = ($(window).width()-20);
 		}
 		
 		$id("time").style.marginLeft = tempPos + 'px';
 		
-		var newPercent = (tempPos / 830 * 10000) / mPlayer.jPlayer("getData", "diag.loadPercent")
+		var newPercent = (tempPos / ($(window).width()-20) * 10000) / mPlayer.jPlayer("getData", "diag.loadPercent")
 		mPlayer.jPlayer( "playHead", newPercent);
 		
 		mouseDown = false;
@@ -447,6 +460,7 @@ function setMouseUp(e) {
 
 function progress(loadPercent,ppr,ppa,playedTime,totalTime)
 {
+	
 	if (playedTime == null) 
 	{
 		playedTime = 0;
@@ -456,8 +470,8 @@ function progress(loadPercent,ppr,ppa,playedTime,totalTime)
 
 	if (loadPercent >= 0)
 	{
-		$id('loadBar').style.width = Math.ceil(loadPercent * 850/100) + 'px';
-		$id('loadBar').style.borderRightWidth = (850 - Math.ceil(loadPercent * 850/100)) + 'px';
+		$id('loadBar').style.width = Math.ceil(loadPercent * $(window).width()/100) + 'px';
+		$id('loadBar').style.borderRightWidth = ($(window).width() - Math.ceil(loadPercent * $(window).width()/100)) + 'px';
 	}
 	
 	if (totalTime > 0) 
@@ -465,7 +479,7 @@ function progress(loadPercent,ppr,ppa,playedTime,totalTime)
 		duration = formatTime(totalTime)
 		
 		if (!mouseDown){
-			$id("time").style.marginLeft = (ppa * 830/100) + 'px'
+			$id("time").style.marginLeft = (ppa * ($(window).width()-20)/100) + 'px'
 		}
 	}
 	else
@@ -494,6 +508,16 @@ function formatTime(i)
 	}
 	
 	return t
+}
+
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
 }
 
 function readCookie(name) {
@@ -538,12 +562,12 @@ function openFolder(e, name){
 	
 		$id(name).style.height = '0px';
 		$id(name).style.opacity = '0';
-		document.cookie = name + "=closed; path=/";
+		createCookie(name, "closed", 365);
 	}
 	else {
 		$id(name).style.opacity = '1';
 		$id(name).style.height = $id(name).scrollHeight + 'px';
-		document.cookie = name + "=open; path=/";
+		createCookie(name, "open", 365);
 	}
 	
 	// fix parent folder heights
@@ -578,7 +602,7 @@ function keyPress(e)
 	{
 		switch (key) {
 			case 32:
-				playSong(null, e);
+				playSong(null, 0, e);
 				break;
 			case 39:
 				nextSong()
@@ -657,8 +681,8 @@ function search(e)
 	
 	//alert($id('searchText').value)
 	sendRequest('/songs.html?search=' + $id('searchText').value, updateContent);
-	document.cookie = "lastPage=search; path=/";
-	document.cookie = "search=" + $id('searchText').value + "; path=/";
+	createCookie("lastPage", "search", 365);
+	createCookie("search", $id('searchText').value , 365);
 	drawSearchClearButton()
 	
 	e.returnValue = false;
@@ -668,7 +692,8 @@ function search(e)
 function clearSearch()
 {
 	$id('searchText').value = ''
-	document.cookie = "search=" + "; path=/";
+	createCookie("search", "", 365);
+	createCookie("search", "", 365);
 	reloadLastPage();
 	drawSearchClearButton()
 }
@@ -678,8 +703,8 @@ function getContent(e, type, id) {
 	
 	$id('main').style.opacity = 0;
 	sendRequest('/songs.html?' + type + '=' + id, updateContent);
-	document.cookie = "lastPage=" + type + "; path=/";
-	document.cookie = type + "=" + id + "; path=/";
+	createCookie("lastPage", type, 365);
+	createCookie(type, id, 365);
 	
 	e.returnValue = false;
 	return false;
@@ -745,7 +770,7 @@ function highlightPlaylist(){
 }
 
 function fixSidebarHeight()
-{
+{	/*
 	if ($id('main').offsetHeight > ($id('mediaSidebar').offsetHeight -35) || 
 		(($id('main').offsetHeight < ($id('mediaSidebar').offsetHeight - 35)) && $id('mediaSidebar').style.paddingBottom != '0px'))
 	{
@@ -754,6 +779,13 @@ function fixSidebarHeight()
 		{
 			$id('mediaSidebar').style.paddingBottom = ($id('main').offsetHeight - $id('mediaSidebar').offsetHeight + 35) + 'px';
 		}
+	}*/
+	
+	$id('mediaSidebar').style.paddingBottom = '0px';
+	
+	if ($id('mediaSidebar').offsetHeight + $id('mPlayer').offsetHeight + $id('progressBar').offsetHeight + $id('header').offsetHeight < $(document).height())
+	{
+		$id('mediaSidebar').style.paddingBottom = ($(document).height() - $id('mediaSidebar').offsetHeight - $id('mPlayer').offsetHeight - 4 - $id('header').offsetHeight) + 'px';
 	}
 }
 
@@ -804,7 +836,7 @@ function changeType(e, type) {
 		sendRequest('/' + type + '.html', updateSidebar);
 	}
 	
-	document.cookie = "lastPage=" + type + "; path=/";
+	createCookie("lastPage", type, 365);
 	
 	e.returnValue = false;
 	return false;
@@ -897,9 +929,9 @@ function reloadLastPage()
 	}
 	else
 	{
-		document.cookie = "lastPage=Playlist; path=/";
-        document.cookie = "Playlist=6FC1A60398C0CEB9; path=/";
-        document.cookie = "9F4D3B18D81B3CC1=open; path=/";
+		createCookie("lastPage", "Playlist", 365);
+		createCookie("Playlist", "6FC1A60398C0CEB9", 365);
+		createCookie("9F4D3B18D81B3CC1", "open", 365);
 		sendRequest('/songs.html?Playlist=6FC1A60398C0CEB9', updateContent);
 	}
 }
@@ -911,7 +943,7 @@ function finishedReload()
 }
 
 function selectLibrary(lib, loginNeeded){
-	document.cookie = "library=" + lib + "; path=/";
+	createCookie("library", lib, 365);
 	if (loginNeeded) {
 		// redirect to the login page if necessary
 		window.location.href = '/login/music'
@@ -924,13 +956,26 @@ function selectLibrary(lib, loginNeeded){
 
 function changeLibrary()
 {
+	
+	fixSidebarHeight()
 	$id('libraries').style.display = "block";
+	
+	$id('libraries').style.top = ($id('mPlayer').offsetHeight + $id('progressBar').offsetHeight + $id('header').offsetHeight)  +  "px";
+	$id('libraries').style.height = ($id('mediaSidebar').offsetHeight) + "px";
+	
+	
+	/*
+	if ($id('mediaSidebar').offsetHeight + $id('mPlayer').offsetHeight + 4 < $(document).height())
+	{
+		$id('mediaSidebar').style.paddingBottom = ($(document).height() - $id('mediaSidebar').offsetHeight - $id('mPlayer').offsetHeight - 4) + 'px';
+	}
+	
 	if ($id('mediaSidebar').scrollHeight > $id('libraries').scrollHeight){
 		$id('libraries').style.height = $id('mediaSidebar').scrollHeight + "px"
 	} else {
 		$id('mediaSidebar').style.paddingBottom = '0px';
 		$id('mediaSidebar').style.paddingBottom = ($id('libraries').scrollHeight - $id('mediaSidebar').scrollHeight) + 'px';
-	}
+	}*/
 	
 	if (readCookie("library")) {
 		depressSelectedLibrary(readCookie("library"));
@@ -947,7 +992,7 @@ function depressSelectedLibrary(lib)
 		if (names[i].id == "libSelected") {
 			names[i].id = ""
 		}
-		if (names[i].innerText == lib && names[i].className == "libName") {
+		if (names[i].innerHTML == lib && names[i].className == "libName") {
 			names[i].parentNode.id = "libSelected"
 		}
 	}
@@ -1031,6 +1076,7 @@ $(document).ready(function()
 		$id('volBar').style.display = 'inline'
 	}
 	
+	window.onresize = fixSidebarHeight;
 	document.onkeyup = keyPress;
 	document.onkeypress = document.onkeydown = function(e){
 		e = window.event || e

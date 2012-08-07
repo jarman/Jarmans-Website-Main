@@ -18,6 +18,11 @@ urls = (
     '/about', 'about',
     '/music', 'music',
     '/selectLibrary', 'selectLibrary',
+	'/createPost(.*)', 'createPost',
+	'/searchPosts(.*)', 'searchPosts',
+	'/reviews(.*)', 'reviews',
+	'/reviewposts/(.*)', 'reviewposts',
+	'/dev(.*)', 'devServer',
     '/(.*)', 'blog'
 )
 
@@ -37,6 +42,7 @@ class libraries(db.Model):
     lastAvailable = db.DateTimeProperty(required=True)
     user = db.StringProperty()
     dateString = db.StringProperty()
+
 
 class proxy:    
     def GET(self, name):
@@ -139,7 +145,7 @@ class music:
                 library.dateString = dateString + "s ago"
             
             library.put()
-        return render.main('music', render.music(libraries, users), users);
+        return render.main('music',render.music(libraries, users), users)
 
 class blog:
     def GET(self, name):
@@ -163,6 +169,13 @@ class blog:
             who = users.get_current_user().nickname())
         post.put();
         raise web.seeother('/')
+
+class devServer:
+	def GET(self, name):
+		return web.seeother("http://184.73.69.209/builds")
+
+from postSearch import *
+from reviews import *
 
 app = web.application(urls, globals())
 

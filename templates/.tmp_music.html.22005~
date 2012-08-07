@@ -39,14 +39,8 @@ $def with (libraries, users)
 	<div id='volumePopover'>Volume<div id='volumeOuter'><div id='volumeInner'></div></div></div>
 </div>
 <div id='mPlayerObj'> </div>
-	<!--[if IE]>
-	<div id='ieShadow'>
-	</div>
-	<script src="static/excanvas.js"></script>
-	<script defer type="text/javascript" src="static/ieShadow.js"></script>
-	<![endif]-->
 <div id='libraries'> 
-	<canvas id="libClose" height=20 width=20 onclick="$$id('libraries').style.display = 'none';"></canvas>
+	<canvas id="libClose" height=20 width=20 onclick="libraries.style.display = 'none';"></canvas>
 	<h2>Please select a library:</h2>
 	$for library in libraries:
 		$if library.user and not (users.get_current_user() and library.user == users.get_current_user().email()):
@@ -63,4 +57,4 @@ $def with (libraries, users)
 <script type="text/javascript" src="static/mPlayerButtons.js"></script>
 <script type="text/javascript" src="static/mPlayerControls.js"></script>
 </body>
-</html>
+</head>

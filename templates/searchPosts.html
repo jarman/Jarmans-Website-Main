@@ -1,0 +1,41 @@
+$def with (posts, postOffset, morePosts, datetime, users)
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="../static/createPost.css"></link>
+	<link rel="stylesheet" type="text/css" href="../static/blog.css"></link>
+	<link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon"></link>
+	<title>Create a post</title>
+</head>
+<body>
+	<div id='header'>
+		<h1><a href='createPost'>inFlux</a></h1>
+		
+		$if (users.get_current_user()):
+			<div id='login'><a href='$(users.create_logout_url("/searchPosts"))' >logout $users.get_current_user().nickname()</a></div> 
+		$else:
+			<div id='login'><a href='$(users.create_login_url("/searchPosts"))'>login</a></div> 
+	</div>
+	<div id='content'>		
+		<h2>Results</h2>
+		$for post in posts:
+			<div class='post'>
+				<a>$post.keywords[0] $post.keywords[1] $post.keywords[2]</a>
+				<p class='postBottom'>$post.user on $(post.submitDate.month).$(post.submitDate.day).$post.submitDate.year
+				and valid for $( (post.endDate - datetime.datetime.now()).days) more days</p>		
+											
+			</div>
+		<div>
+		<div id='postNavigation'>
+		$if morePosts:
+			<div id='olderPosts'><a href='/blog?offset=$(postOffset+10)'>&lt&lt older posts</a></div>
+		$if (postOffset > 10):
+			<div id='newerPosts'><a href='/blog?offset=$(postOffset-10)'>newer posts &gt&gt</a></div>
+		$elif (postOffset > 0):
+			<div id='newerPosts'><a href='/blog'>newer posts &gt&gt</a></div>
+		</div>
+	</div>
+	<link rel="stylesheet" type="text/css" href="../static/glowbuttons.css">
+</body>
+</html>

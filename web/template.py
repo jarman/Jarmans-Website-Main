@@ -37,8 +37,10 @@ __all__ = [
 
 import tokenize
 import os
+import sys
 import glob
 import re
+from UserDict import DictMixin
 
 from utils import storage, safeunicode, safestr, re_compile
 from webapi import config
@@ -518,12 +520,12 @@ class DefwithNode:
     def __init__(self, defwith, suite):
         if defwith:
             self.defwith = defwith.replace('with', '__template__') + ':'
-            # offset 3 lines. for __lineoffset__, loop and self.
-            self.defwith += "\n    __lineoffset__ = -3"
+            # offset 4 lines. for encoding, __lineoffset__, loop and self.
+            self.defwith += "\n    __lineoffset__ = -4"
         else:
             self.defwith = 'def __template__():'
-            # offset 4 lines for __template__, __lineoffset__, loop and self.
-            self.defwith += "\n    __lineoffset__ = -4"
+            # offset 4 lines for encoding, __template__, __lineoffset__, loop and self.
+            self.defwith += "\n    __lineoffset__ = -5"
 
         self.defwith += "\n    loop = ForLoop()"
         self.defwith += "\n    self = TemplateResult(); extend_ = self.extend"
@@ -531,7 +533,8 @@ class DefwithNode:
         self.end = "\n    return self"
 
     def emit(self, indent):
-        return self.defwith + self.suite.emit(indent + INDENT) + self.end
+        encoding = "# coding: utf-8\n"
+        return encoding + self.defwith + self.suite.emit(indent + INDENT) + self.end
 
     def __repr__(self):
         return "<defwith: %s, %s>" % (self.defwith, self.suite)
@@ -540,7 +543,7 @@ class TextNode:
     def __init__(self, value):
         self.value = value
 
-    def emit(self, indent):
+    def emit(self, indent, begin_indent=''):
         return repr(safeunicode(self.value))
         
     def __repr__(self):
@@ -556,7 +559,7 @@ class ExpressionNode:
             
         self.escape = escape
 
-    def emit(self, indent):
+    def emit(self, indent, begin_indent=''):
         return 'escape_(%s, %s)' % (self.value, bool(self.escape))
         
     def __repr__(self):
@@ -590,7 +593,7 @@ class LineNode:
     def __repr__(self):
         return "<line: %s>" % repr(self.nodes)
 
-INDENT = u'    ' # 4 spaces
+INDENT = '    ' # 4 spaces
         
 class BlockNode:
     def __init__(self, stmt, block, begin_indent=''):
@@ -636,7 +639,7 @@ class StatementNode:
     def __init__(self, stmt):
         self.stmt = stmt
         
-    def emit(self, indent):
+    def emit(self, indent, begin_indent=''):
         return indent + self.stmt
         
     def __repr__(self):
@@ -823,27 +826,6 @@ class BaseTemplate:
             value = self.filter(value)
         return value
 
-_htmlquote_re = re.compile(r'[&<>"\']')
-_htmlquote_d = {
-    u"&": u"&amp;",
-    u"<": u"&lt;",
-    u">": u"&gt;",
-    u"'": u"&#39;",
-    u'"': u"&quot;",
-}
-        
-def websafe(text):
-    r"""
-    Encodes `text` for raw use in HTML.
-
-        >>> websafe(u"<'&\">")
-        u'&lt;&#39;&amp;&quot;&gt;'
-        
-    Unlike the websafe function in utils.py, this works with unicode text.
-    """
-    return _htmlquote_re.sub(lambda m: _htmlquote_d[m.group(0)], text)
-    
-
 class Template(BaseTemplate):
     CONTENT_TYPES = {
         '.html' : 'text/html; charset=utf-8',
@@ -936,10 +918,14 @@ class Template(BaseTemplate):
                 pass
             raise
         
-        # make sure code is safe
-        import compiler
-        ast = compiler.parse(code)
-        SafeVisitor().walk(ast, filename)
+        # make sure code is safe - but not with jython, it doesn't have a working compiler module
+        if not sys.platform.startswith('java'):
+            import compiler
+            ast = compiler.parse(code)
+            SafeVisitor().walk(ast, filename)
+        else:
+            import warnings
+            warnings.warn("SECURITY ISSUE: You are using Jython, which does not support checking templates for safety. Your templates can execute arbitrary code.")
 
         return compiled_code
         
@@ -982,7 +968,14 @@ class Render:
             self._base = lambda page: self._template(base)(page)
         else:
             self._base = base
-            
+    
+    def _add_global(self, obj, name=None):
+        """Add a global to this rendering instance."""
+        if 'globals' not in self._keywords: self._keywords['globals'] = {}
+        if not name:
+            name = obj.__name__
+        self._keywords['globals'][name] = obj
+    
     def _lookup(self, name):
         path = os.path.join(self._loc, name)
         if os.path.isdir(path):
@@ -1079,10 +1072,6 @@ def compile_templates(root):
         out.write('from web.template import CompiledTemplate, ForLoop, TemplateResult\n\n')
         if dirnames:
             out.write("import " + ", ".join(dirnames))
-    
-        out.write("_dummy = CompiledTemplate(lambda: None, 'dummy')\n")
-        out.write("join_ = _dummy._join\n")
-        out.write("escape_ = _dummy._escape\n")
         out.write("\n")
 
         for f in filenames:
@@ -1098,11 +1087,12 @@ def compile_templates(root):
             code = Template.generate_code(text, path)
 
             code = code.replace("__template__", name, 1)
-
+            
             out.write(code)
 
             out.write('\n\n')
-            out.write('%s = CompiledTemplate(%s, %s)\n\n' % (name, name, repr(path)))
+            out.write('%s = CompiledTemplate(%s, %s)\n' % (name, name, repr(path)))
+            out.write("join_ = %s._join; escape_ = %s._escape\n\n" % (name, name))
 
             # create template to make sure it compiles
             t = Template(open(path).read(), path)
@@ -1216,46 +1206,97 @@ class SafeVisitor(object):
         e = SecurityError("%s:%d - execution of '%s' statements is denied" % (self.filename, lineno, nodename))
         self.errors.append(e)
 
-class TemplateResult(storage):
+class TemplateResult(object, DictMixin):
     """Dictionary like object for storing template output.
     
-    A template can specify key-value pairs in the output using 
-    `var` statements. Each `var` statement adds a new key to the 
-    template output and the main output is stored with key 
-    __body__.
+    The result of a template execution is usally a string, but sometimes it
+    contains attributes set using $var. This class provides a simple
+    dictionary like interface for storing the output of the template and the
+    attributes. The output is stored with a special key __body__. Convering
+    the the TemplateResult to string or unicode returns the value of __body__.
+    
+    When the template is in execution, the output is generated part by part
+    and those parts are combined at the end. Parts are added to the
+    TemplateResult by calling the `extend` method and the parts are combined
+    seemlessly when __body__ is accessed.
     
         >>> d = TemplateResult(__body__='hello, world', x='foo')
         >>> d
         <TemplateResult: {'__body__': 'hello, world', 'x': 'foo'}>
         >>> print d
         hello, world
+        >>> d.x
+        'foo'
         >>> d = TemplateResult()
         >>> d.extend([u'hello', u'world'])
         >>> d
         <TemplateResult: {'__body__': u'helloworld'}>
     """
     def __init__(self, *a, **kw):
-        storage.__init__(self, *a, **kw)
-        self.setdefault("__body__", None)
-
-        # avoiding self._data because add it as self["_data"]
-        self.__dict__["_data"] = []
-        self.__dict__["extend"] = self._data.extend
-
+        self.__dict__["_d"] = dict(*a, **kw)
+        self._d.setdefault("__body__", u'')
+        
+        self.__dict__['_parts'] = []
+        self.__dict__["extend"] = self._parts.extend
+        
+        self._d.setdefault("__body__", None)
+    
+    def keys(self):
+        return self._d.keys()
+        
+    def _prepare_body(self):
+        """Prepare value of __body__ by joining parts.
+        """
+        if self._parts:
+            value = u"".join(self._parts)
+            self._parts[:] = []
+            body = self._d.get('__body__')
+            if body:
+                self._d['__body__'] = body + value
+            else:
+                self._d['__body__'] = value
+                
     def __getitem__(self, name):
-        if name == "__body__" and storage.__getitem__(self, '__body__') is None:
-            self["__body__"] = u"".join(self._data)
-        return storage.__getitem__(self, name)
+        if name == "__body__":
+            self._prepare_body()
+        return self._d[name]
+        
+    def __setitem__(self, name, value):
+        if name == "__body__":
+            self._prepare_body()
+        return self._d.__setitem__(name, value)
+        
+    def __delitem__(self, name):
+        if name == "__body__":
+            self._prepare_body()
+        return self._d.__delitem__(name)
 
-    def __unicode__(self): 
+    def __getattr__(self, key): 
+        try:
+            return self[key]
+        except KeyError, k:
+            raise AttributeError, k
+
+    def __setattr__(self, key, value): 
+        self[key] = value
+
+    def __delattr__(self, key):
+        try:
+            del self[key]
+        except KeyError, k:
+            raise AttributeError, k
+        
+    def __unicode__(self):
+        self._prepare_body()
         return self["__body__"]
     
     def __str__(self):
+        self._prepare_body()
         return self["__body__"].encode('utf-8')
         
     def __repr__(self):
-        self["__body__"] # initialize __body__ if not already initialized
-        return "<TemplateResult: %s>" % dict.__repr__(self)
+        self._prepare_body()
+        return "<TemplateResult: %s>" % self._d
 
 def test():
     r"""Doctest for testing template module.

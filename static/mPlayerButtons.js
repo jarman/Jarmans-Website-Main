@@ -2,7 +2,7 @@
 
 function drawPlayButton(){
 	canvas = $id("playCanvas").getContext('2d');
-	canvas.clearRect(0, 0, 10, 12)
+	canvas.clearRect(0, 0, 20, 20)
 	
 	if (playing) {
 		canvas.fillStyle = '#E9E7E0';
@@ -17,7 +17,7 @@ function drawPlayButton(){
 	canvas.beginPath();
 	canvas.moveTo(0, 1);
 	canvas.lineTo(0, 11);
-	canvas.lineTo(10, 6);
+	canvas.lineTo(8, 6);
 	canvas.lineTo(0, 1);
 	canvas.closePath();
 	canvas.shadowBlur = 1;

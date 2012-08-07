@@ -43,6 +43,11 @@ except ImportError: pass
 try: set
 except NameError:
     from sets import Set as set
+    
+try:
+    from threading import local as threadlocal
+except ImportError:
+    from python23 import threadlocal
 
 class Storage(dict):
     """
@@ -268,6 +273,11 @@ of lists, tuples, sets, and Sets are available in this version of Python.
 """
 
 def _strips(direction, text, remove):
+    if isinstance(remove, iters):
+        for subr in remove:
+            text = _strips(direction, text, subr)
+        return text
+    
     if direction == 'l': 
         if text.startswith(remove): 
             return text[len(remove):]
@@ -294,6 +304,12 @@ def lstrips(text, remove):
     
         >>> lstrips("foobar", "foo")
         'bar'
+        >>> lstrips('http://foo.org/', ['http://', 'https://'])
+        'foo.org/'
+        >>> lstrips('FOOBARBAZ', ['FOO', 'BAR'])
+        'BAZ'
+        >>> lstrips('FOOBARBAZ', ['BAR', 'FOO'])
+        'BARBAZ'
     
     """
     return _strips('l', text, remove)
@@ -326,11 +342,10 @@ def safeunicode(obj, encoding='utf-8'):
         return obj.decode(encoding)
     elif t in [int, float, bool]:
         return unicode(obj)
+    elif hasattr(obj, '__unicode__') or isinstance(obj, unicode):
+        return unicode(obj)
     else:
-        if hasattr(obj, '__unicode__'):
-            return unicode(obj)
-        else:
-            return str(obj).decode(encoding)
+        return str(obj).decode(encoding)
     
 def safestr(obj, encoding='utf-8'):
     r"""
@@ -344,10 +359,10 @@ def safestr(obj, encoding='utf-8'):
         '2'
     """
     if isinstance(obj, unicode):
-        return obj.encode('utf-8')
+        return obj.encode(encoding)
     elif isinstance(obj, str):
         return obj
-    elif hasattr(obj, 'next') and hasattr(obj, '__iter__'): # iterator
+    elif hasattr(obj, 'next'): # iterator
         return itertools.imap(safestr, obj)
     else:
         return str(obj)
@@ -534,20 +549,29 @@ def group(seq, size):
         else:
             break
 
-def uniq(seq):
-   """
-   Removes duplicate elements from a list.
+def uniq(seq, key=None):
+    """
+    Removes duplicate elements from a list while preserving the order of the rest.
 
-       >>> uniq([1,2,3,1,4,5,6])
-       [1, 2, 3, 4, 5, 6]
-   """
-   seen = set()
-   result = []
-   for item in seq:
-       if item in seen: continue
-       seen.add(item)
-       result.append(item)
-   return result
+        >>> uniq([9,0,2,1,0])
+        [9, 0, 2, 1]
+
+    The value of the optional `key` parameter should be a function that
+    takes a single argument and returns a key to test the uniqueness.
+
+        >>> uniq(["Foo", "foo", "bar"], key=lambda s: s.lower())
+        ['Foo', 'bar']
+    """
+    key = key or (lambda x: x)
+    seen = set()
+    result = []
+    for v in seq:
+        k = key(v)
+        if k in seen:
+            continue
+        seen.add(k)
+        result.append(v)
+    return result
 
 def iterview(x):
    """
@@ -1144,7 +1168,7 @@ def tryall(context, prefix=None):
     for (key, value) in results.iteritems():
         print ' '*2, str(key)+':', value
         
-class ThreadedDict:
+class ThreadedDict(threadlocal):
     """
     Thread local storage.
     
@@ -1161,30 +1185,87 @@ class ThreadedDict:
         >>> d.x
         1
     """
-    def __getattr__(self, key):
-        return getattr(self._getd(), key)
-
-    def __setattr__(self, key, value):
-        return setattr(self._getd(), key, value)
-
-    def __delattr__(self, key):
-        return delattr(self._getd(), key)
-
-    def __hash__(self): 
+    _instances = set()
+    
+    def __init__(self):
+        ThreadedDict._instances.add(self)
+        
+    def __del__(self):
+        ThreadedDict._instances.remove(self)
+        
+    def __hash__(self):
         return id(self)
+    
+    def clear_all():
+        """Clears all ThreadedDict instances.
+        """
+        for t in ThreadedDict._instances:
+            t.clear()
+    clear_all = staticmethod(clear_all)
+    
+    # Define all these methods to more or less fully emulate dict -- attribute access
+    # is built into threading.local.
 
-    def _getd(self):
-        t = threading.currentThread()
-        if not hasattr(t, '_d'):
-            # using __dict__ of thread as thread local storage
-            t._d = {}
+    def __getitem__(self, key):
+        return self.__dict__[key]
 
-        # there could be multiple instances of ThreadedDict.
-        # use self as key
-        if self not in t._d:
-            t._d[self] = storage()
-        return t._d[self]
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
 
+    def __delitem__(self, key):
+        del self.__dict__[key]
+
+    def __contains__(self, key):
+        return key in self.__dict__
+
+    has_key = __contains__
+        
+    def clear(self):
+        self.__dict__.clear()
+
+    def copy(self):
+        return self.__dict__.copy()
+
+    def get(self, key, default=None):
+        return self.__dict__.get(key, default)
+
+    def items(self):
+        return self.__dict__.items()
+
+    def iteritems(self):
+        return self.__dict__.iteritems()
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def iterkeys(self):
+        return self.__dict__.iterkeys()
+
+    iter = iterkeys
+
+    def values(self):
+        return self.__dict__.values()
+
+    def itervalues(self):
+        return self.__dict__.itervalues()
+
+    def pop(self, key, *args):
+        return self.__dict__.pop(key, *args)
+
+    def popitem(self):
+        return self.__dict__.popitem()
+
+    def setdefault(self, key, default=None):
+        return self.__dict__.setdefault(key, default)
+
+    def update(self, *args, **kwargs):
+        self.__dict__.update(*args, **kwargs)
+
+    def __repr__(self):
+        return '<ThreadedDict %r>' % self.__dict__
+
+    __str__ = __repr__
+    
 threadeddict = ThreadedDict
 
 def autoassign(self, locals):
@@ -1286,7 +1367,7 @@ def sendmail(from_address, to_address, subject, message, headers=None, **kw):
             raise ValueError, "Invalid attachment: %s" % repr(a)
             
     mail.send()
-        
+
 class _EmailMessage:
     def __init__(self, from_address, to_address, subject, message, headers=None, **kw):
         def listify(x):
@@ -1353,16 +1434,23 @@ class _EmailMessage:
             encoders.encode_base64(msg)
             
         self.message.attach(msg)
-    
+
+    def prepare_message(self):
+        for k, v in self.headers.iteritems():
+            if k.lower() == "content-type":
+                self.message.set_type(v)
+            else:
+                self.message.add_header(k, v)
+
+        self.headers = {}
+
     def send(self):
         try:
             import webapi
         except ImportError:
             webapi = Storage(config=Storage())
-            
-        for k, v in self.headers.iteritems():
-            self.message.add_header(k, v)
-            
+
+        self.prepare_message()
         message_text = self.message.as_string()
     
         if webapi.config.get('smtp_server'):
@@ -1389,6 +1477,12 @@ class _EmailMessage:
 
             smtpserver.sendmail(self.from_address, self.recipients, message_text)
             smtpserver.quit()
+        elif webapi.config.get('email_engine') == 'aws':
+            import boto.ses
+            c = boto.ses.SESConnection(
+              aws_access_key_id=webapi.config.get('aws_access_key_id'),
+              aws_secret_access_key=web.api.config.get('aws_secret_access_key'))
+            c.send_raw_email(self.from_address, message_text, self.from_recipients)
         else:
             sendmail = webapi.config.get('sendmail_path', '/usr/sbin/sendmail')
         

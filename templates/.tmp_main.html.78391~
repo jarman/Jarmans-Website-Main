@@ -10,22 +10,30 @@ $def with (curTab, content, users)
 	<title>jarman rogers</title>
 </head>
 <body>
-	<div id='header'>
+	<div id='center'>
 		<h1><a href='index.html'>jarman rogers</a></h1>
-		<div id="sectionTabs">
+		<div id="topMenu">
 		$for tab in ['blog', 'projects', 'music', 'about']:
 			$if (curTab == tab):
 				<a id='curTab' href="../$(tab)">$tab</a>
 			$else:
 				<a class='tab' href="../$(tab)">$tab</a>
 		</div>
-		$if (users.get_current_user()):
-			<div id='login'><a href='$(users.create_logout_url("/" + curTab))' >logout $users.get_current_user().nickname()</a></div> 
-		$else:
-			<div id='login'><a href='$(users.create_login_url("/" + curTab))'>login</a></div> 
+		$content
+		<div id='footer'>
+			<div id='credit'>design by jarman rogers </div>
+			$if (users.get_current_user()):
+				<div id='login'><a href='$(users.create_logout_url("/" + curTab))' >logout $users.get_current_user().nickname()</a></div> 
+			$else:
+				<div id='login'><a href='$(users.create_login_url("/" + curTab))'>login</a></div> 
+		</div>
 	</div>
-	<div id='contentDivider'></div>
-	$:content
+	<!--[if IE]>
+	<div id='ieShadow'>
+	</div>
+	<script src="static/excanvas.js"></script>
+	<script defer type="text/javascript" src="static/ieShadow.js"></script>
+	<![endif]-->
 	<link rel="stylesheet" type="text/css" href="../static/glowbuttons.css">
 </body>
 </html>

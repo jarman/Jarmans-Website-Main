@@ -1,0 +1,58 @@
+$def with (post, user, postOffset, morePosts, users)
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<script defer type="text/javascript" src="static/ieShadow.js"></script><![endif]-->
+	<link rel="stylesheet" type="text/css" href="../static/main.css">
+	<link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon" />
+	<title>Reviews</title>
+</head>
+<body>
+	<div id='header'>
+		<h1><a href='/reviews'>Alex's Reviews</a></h1>
+		$if (users.get_current_user()):
+			<div id='login'><a href='$(users.create_logout_url("/reviews"))' >logout $users.get_current_user().nickname()</a></div> 
+		$else:
+			<div id='login'><a href='$(users.create_login_url("/reviews"))'>login</a></div> 
+	</div>
+	<div id='contentDivider'></div>
+
+	<link rel="stylesheet" type="text/css" href="../static/blog.css">
+	<div id='content'>
+		<div id="main" style='float:left'>
+			<h2>$post.title</h2>
+			<div class='post'>
+				<p>$:post.message</p>
+				$if (post.who):
+					<p class='postBottom'>- $post.who on $(post.when.month).$(post.when.day).$post.when.year</p>		
+				$else:
+					<p class='postBottom'>- jarman on $(post.when.month).$(post.when.day).$post.when.year</p>							
+			</div>
+			<div>
+			<div id='postNavigation'>
+			$if morePosts:
+				<div id='olderPosts'><a href='/reviews?offset=$(postOffset+10)'>&lt&lt older posts</a></div>
+			$if (postOffset > 10):
+				<div id='newerPosts'><a href='/reviews?offset=$(postOffset-10)'>newer posts &gt&gt</a></div>
+			$elif (postOffset > 0):
+				<div id='newerPosts'><a href='/reviews'>newer posts &gt&gt</a></div>
+			</div>
+			$if user == 'jarman':
+				<form action='' method='post' accept-charset='utf-8'>
+					<p>Title: <input type='text' name='title' id='title' value='' size='40'></p>
+					<p><textarea name='message' id='message' rows=10 cols=60></textarea></p>
+					<p><input type='submit' value='Post'></p> 
+				</form>
+			</div>
+		</div>
+		<div id='sidebar' style='float:right'>			
+			<h2>The Details</h2>
+			<p>$:post.details</p>
+		</div>
+	</div>
+	<script type="text/javascript" src="static/fixSidebar.js"></script>
+
+
+	<link rel="stylesheet" type="text/css" href="../static/glowbuttons.css">
+</body>

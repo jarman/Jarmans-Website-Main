@@ -1,0 +1,31 @@
+$def with (users)
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="../static/createPost.css"></link>
+	<link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon"></link>
+	<title>Create a post</title>
+</head>
+<body>
+	<div id='header'>
+		<h1><a href='createPost'>inFlux</a></h1>
+		
+		$if (users.get_current_user()):
+			<div id='login'><a href='$(users.create_logout_url("/createPost"))' >logout $users.get_current_user().nickname()</a></div> 
+		$else:
+			<div id='login'><a href='$(users.create_login_url("/createPost"))'>login</a></div> 
+	</div>
+	<div id='content'>
+		<form action="" method="post">
+			<input type="text" name="kw1" class="field"/><br />
+			<input type="text" name="kw2" class="field"/><br />
+			<input type="text" name="kw3" class="field"/><br />
+			I'm interested in this search for: <br />
+			<input type="range" name="duration" id="rangeSlider" ><div id="searchTime">1 month</div><br />
+			<input type="submit" id="submitButton" value="Search"><br />
+		</form>
+	</div>
+	<link rel="stylesheet" type="text/css" href="../static/glowbuttons.css">
+</body>
+</html>

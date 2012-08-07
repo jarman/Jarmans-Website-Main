@@ -32,7 +32,7 @@ $def with (posts, user, postOffset, morePosts)
 	</div>
 	<div id='sidebar' style='float:right'>			
 		<h2>Welcome</h2>
-		<p>This website is a repository for things i'm working on. Have a look around and let me know what you think.</p>
+		<p>This website is a repository for things I'm working on. Have a look around and let me know what you think.</p>
 		<p>I've been doing a lot of work on the audio player recently, so it's worth a look I think.</p>
 	</div>
 </div>
