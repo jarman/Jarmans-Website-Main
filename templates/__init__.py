@@ -78,45 +78,176 @@ blog = CompiledTemplate(blog, 'templates/blog.html')
 join_ = blog._join; escape_ = blog._escape
 
 # coding: utf-8
-def createPost (users):
+def contactsAccess (url):
     __lineoffset__ = -4
     loop = ForLoop()
     self = TemplateResult(); extend_ = self.extend
     extend_([u'\n'])
+    extend_([u'<html>\n'])
+    extend_([u'<head>\n'])
+    extend_([u'        <title>Contacts</title>\n'])
+    extend_([u'        <link rel="stylesheet" type="text/css" href="static/contacts.css">\n'])
+    extend_([u'</head>\n'])
+    extend_([u'<body>\n'])
+    extend_([u'<h4>Request a token</h4>\n'])
+    extend_([u'<a href="', escape_(url, True), u'">Google Contacts Authorization Page</a>\n'])
+    extend_([u'</body>\n'])
+    extend_([u'</html>\n'])
+
+    return self
+
+contactsAccess = CompiledTemplate(contactsAccess, 'templates/contactsAccess.html')
+join_ = contactsAccess._join; escape_ = contactsAccess._escape
+
+# coding: utf-8
+def contactsEntriesView (users):
+    __lineoffset__ = -4
+    loop = ForLoop()
+    self = TemplateResult(); extend_ = self.extend
+    extend_([u'\n'])
+    extend_([u'<html>\n'])
+    extend_([u'<head>\n'])
+    extend_([u'        <title>Contacts</title>\n'])
+    extend_([u'        <script type="text/javascript" src="static/jquery.min.js"></script>\n'])
+    extend_([u'        <script type="text/javascript" src="static/contacts.js"></script>\n'])
+    extend_([u'        <link rel="stylesheet" type="text/css" href="static/contacts.css">\n'])
+    extend_([u'</head>\n'])
+    extend_([u'<body>\n'])
+    extend_([u'<div id="header">\n'])
+    extend_([u'        <form id="searchfield">\n'])
+    extend_([u'                <input id=\'mainsearchfield\' type="search" name="search" placeholder="search full names">\n'])
+    extend_([u'                <div id=\'advancedsearch\' style="display:none;"><br>\n'])
+    extend_([u'                        <input type="text" name="firstname" placeholder="first name"/>\n'])
+    extend_([u'                        <input type="text" name="lastname" placeholder="last name"/>\n'])
+    extend_([u'                        <input type="text" name="company" placeholder="company"/>\n'])
+    extend_([u'                        <input type="text" name="job" placeholder="job"/>\n'])
+    extend_([u'                        <input type="datetime" name="birthday" placeholder="birthday"/>\n'])
+    extend_([u'                        <input type="text" name="phone" placeholder="primary phone"/>\n'])
+    extend_([u'                        <input type="text" name="email" placeholder="primary email"/>\n'])
+    extend_([u'                        <input type="text" name="labels" placeholder="groups (comma delimeted)" />\n'])
+    extend_([u'                        <input type="text" name="exclude" placeholder="groups to exclude (comma delimeted)" />\n'])
+    extend_([u'                        <br><select id=\'rangename\' name="rangename">\n'])
+    extend_([u'                          <option value="first">first</option>\n'])
+    extend_([u'                          <option value="last">last</option>\n'])
+    extend_([u'                        </select> name begins with\n'])
+    extend_([u'                        <select name="beginswith" id=\'beginswith\'><option></option></select> through                    \n'])
+    extend_([u'                        <select name="beginswith" id=\'endswith\'><option>select the first letter</option></select>\n'])
+    extend_([u'                                \n'])
+    extend_([u'                </div><br>\n'])
+    extend_([u'                <input id=\'submitbutton\' type="submit"><br>\n'])
+    extend_([u'                <a id="showadvancedsearch" href="javascript:void(0)">advanced search</a><br>\n'])
+    extend_([u'        </form>\n'])
+    extend_([u'</div>\n'])
+    extend_([u"<div id='headerpadding'></div>\n"])
+    extend_([u'<div id="entries">\n'])
+    extend_([u'</div>\n'])
+    extend_([u"<a id='logout' href='", escape_((users.create_logout_url("/urbandaddy")), True), u"' >logout ", escape_(users.get_current_user().nickname(), True), u'</a><br>\n'])
+    extend_([u'</body>\n'])
+    extend_([u'</html>\n'])
+
+    return self
+
+contactsEntriesView = CompiledTemplate(contactsEntriesView, 'templates/contactsEntriesView.html')
+join_ = contactsEntriesView._join; escape_ = contactsEntriesView._escape
+
+# coding: utf-8
+def contactsEntryElement (entries, max):
+    __lineoffset__ = -4
+    loop = ForLoop()
+    self = TemplateResult(); extend_ = self.extend
+    extend_([u'\n'])
+    for i, entry in loop.setup(enumerate(entries[0:max])):
+        extend_([u"    <div class='contactEntry'>\n"])
+        if (entry.title and entry.title.text):
+            extend_(['    ', u'    <h4>', escape_(entry.title.text, True), u'</h4>\n'])
+        if entry.organization:
+            if entry.organization.org_title:
+                extend_(['        ', u'    <b>job:</b> ', escape_(entry.organization.org_title.text, True), u'<br>\n'])
+            if entry.organization.org_name:
+                extend_(['        ', u'    <b>company name:</b> ', escape_(entry.organization.org_name.text, True), u'<br>\n'])
+        for email in loop.setup(entry.email):
+            if email.primary:
+                extend_(['        ', u'    <b>email:</b> ', escape_(email.address, True), u'<br>\n'])
+        for num in loop.setup(entry.phone_number):
+            if num.primary:
+                extend_(['        ', u'    <b>phone number:</b> ', escape_(num.text, True), u'<br>\n'])
+        if entry.birthday:
+            extend_(['    ', u'    <b>birthday:</b> ', escape_(entry.birthday.when, True), u'<br>\n'])
+        for cat in loop.setup(entry.group_membership_info):
+            extend_(['    ', u'    <b>group:</b> ', escape_(cat.text, True), u'<br>\n'])
+        extend_([u'    </div>\n'])
+        extend_([u'    <br>\n'])
+    if len(entries) > max:
+        extend_([u'    first ', escape_(max, True), u' of ', escape_(len(entries), True), u' results\n'])
+    else:
+        extend_([u'    ', escape_(len(entries), True), u' results\n'])
+
+    return self
+
+contactsEntryElement = CompiledTemplate(contactsEntryElement, 'templates/contactsEntryElement.html')
+join_ = contactsEntryElement._join; escape_ = contactsEntryElement._escape
+
+# coding: utf-8
+def contactsLogin (url):
+    __lineoffset__ = -4
+    loop = ForLoop()
+    self = TemplateResult(); extend_ = self.extend
+    extend_([u'\n'])
+    extend_([u'<html>\n'])
+    extend_([u'<head>\n'])
+    extend_([u'        <title>Contacts</title>\n'])
+    extend_([u'        <link rel="stylesheet" type="text/css" href="static/contacts.css">\n'])
+    extend_([u'</head>\n'])
+    extend_([u'<body>\n'])
+    extend_([u'        <h4>You must first login to use the app<h4>\n'])
+    extend_([u"        <a href='", escape_(url, True), u"'>Sign In</a>\n"])
+    extend_([u'</body>\n'])
+    extend_([u'</html>\n'])
+
+    return self
+
+contactsLogin = CompiledTemplate(contactsLogin, 'templates/contactsLogin.html')
+join_ = contactsLogin._join; escape_ = contactsLogin._escape
+
+# coding: utf-8
+def influx():
+    __lineoffset__ = -5
+    loop = ForLoop()
+    self = TemplateResult(); extend_ = self.extend
     extend_([u'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">\n'])
     extend_([u'<html>\n'])
     extend_([u'<head>\n'])
-    extend_([u'        <link rel="stylesheet" type="text/css" href="../static/createPost.css"></link>\n'])
+    extend_([u'        <link rel="stylesheet" type="text/css" href="../static/influx.css"></link>\n'])
     extend_([u'        <link rel="shortcut icon" href="../static/favicon.ico" type="image/x-icon"></link>\n'])
     extend_([u'        <title>Create a post</title>\n'])
     extend_([u'</head>\n'])
     extend_([u'<body>\n'])
     extend_([u"        <div id='header'>\n"])
     extend_([u"                <h1><a href='createPost'>inFlux</a></h1>\n"])
-    extend_([u'                \n'])
-    if (users.get_current_user()):
-        extend_(['                ', u"    <div id='login'><a href='", escape_((users.create_logout_url("/createPost")), True), u"' >logout ", escape_(users.get_current_user().nickname(), True), u'</a></div> \n'])
-    else:
-        extend_(['                ', u"    <div id='login'><a href='", escape_((users.create_login_url("/createPost")), True), u"'>login</a></div> \n"])
+    extend_([u"                <div id='login'><a href='#'>login</a></div> \n"])
     extend_([u'        </div>\n'])
     extend_([u"        <div id='content'>\n"])
-    extend_([u'                <form action="" method="post">\n'])
-    extend_([u'                        <input type="text" name="kw1" class="field"/><br />\n'])
-    extend_([u'                        <input type="text" name="kw2" class="field"/><br />\n'])
-    extend_([u'                        <input type="text" name="kw3" class="field"/><br />\n'])
+    extend_([u'                <form action="" method="post" id="mainForm">\n'])
+    extend_([u'                        <input type="text" name="kw1" id="kw1" class="field"/><br />\n'])
+    extend_([u'                        <input type="text" name="kw2" id="kw2" class="field"/><br />\n'])
+    extend_([u'                        <input type="text" name="kw3" id="kw3" class="field"/><br />\n'])
     extend_([u"                        I'm interested in this search for: <br />\n"])
     extend_([u'                        <input type="range" name="duration" id="rangeSlider" ><div id="searchTime">1 month</div><br />\n'])
     extend_([u'                        <input type="submit" id="submitButton" value="Search"><br />\n'])
     extend_([u'                </form>\n'])
     extend_([u'        </div>\n'])
+    extend_([u"        <div id='results'>\n"])
+    extend_([u'        </div>\n'])
     extend_([u'        <link rel="stylesheet" type="text/css" href="../static/glowbuttons.css">\n'])
+    extend_([u'        <script type="text/javascript" src="../static/jquery.min.js"></script>\n'])
+    extend_([u'        <script type="text/javascript" src="../static/influx.js"></script>\n'])
     extend_([u'</body>\n'])
     extend_([u'</html>\n'])
 
     return self
 
-createPost = CompiledTemplate(createPost, 'templates/createPost.html')
-join_ = createPost._join; escape_ = createPost._escape
+influx = CompiledTemplate(influx, 'templates/influx.html')
+join_ = influx._join; escape_ = influx._escape
 
 # coding: utf-8
 def main (curTab, content, users):
@@ -182,7 +313,7 @@ def music (libraries, users):
     extend_([u"        <a href='#' onclick='return toggleRepeat(event)' class='mpButton' id='repeat'><canvas id='repeatCanvas' height='12' width='17'>repeat</canvas></a>\n"])
     extend_([u"        <a href='#' onclick='return toggleShuffle(event)' class='mpButton' id='shuffle'><canvas id='shuffleCanvas' height='12' width='20'>shuffle</canvas></a>\n"])
     extend_([u"        <a href='#' onmouseover='return openVolume(event)' onmouseout='closeVolume(event)' onclick='return mute(event)' class='mpButton' id='volume'><canvas id='volumeCanvas' height='12' width='16'>volume</canvas></a>\n"])
-    extend_([u"        <div onmouseout='closeVolume(event)' onmousedown='return startDrag(event)' return false' id='volBar'><div id='volSlider'></div></div>\n"])
+    extend_([u"        <div onmouseout='closeVolume(event)' onmousedown='return startDrag(event)' id='volBar'><div id='volSlider'></div></div>\n"])
     extend_([u"        |<div id='songTime'></div>|<div id='songInfo'></div>\n"])
     extend_([u'</div>\n'])
     extend_([u"<a  id='progressBar' onMouseDown='return setMouseDown(event)' onClick='return false' href='#'><div id='loadBar'><div id='time'></div></div></a>\n"])

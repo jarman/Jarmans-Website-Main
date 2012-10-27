@@ -1,0 +1,41 @@
+$def with (users)
+
+<html>
+<head>
+	<title>Contacts</title>
+	<script type="text/javascript" src="static/jquery.min.js"></script>
+	<script type="text/javascript" src="static/contacts.js"></script>
+ 	<link rel="stylesheet" type="text/css" href="static/contacts.css">
+</head>
+<body>
+<div id="header">
+	<form id="searchfield">
+		<input id='mainsearchfield' type="search" name="search" placeholder="search full names">
+		<div id='advancedsearch' style="display:none;"><br>
+			<input type="text" name="firstname" placeholder="first name"/>
+			<input type="text" name="lastname" placeholder="last name"/>
+			<input type="text" name="company" placeholder="company"/>
+			<input type="text" name="job" placeholder="job"/>
+			<input type="datetime" name="birthday" placeholder="birthday"/>
+			<input type="text" name="phone" placeholder="primary phone"/>
+			<input type="text" name="email" placeholder="primary email"/>
+			<input type="text" name="labels" placeholder="groups (comma delimeted)" />
+			<input type="text" name="exclude" placeholder="groups to exclude (comma delimeted)" />
+			<br><select id='rangename' name="rangename">
+			  <option value="first">first</option>
+			  <option value="last">last</option>
+			</select> name begins with
+			<select name="beginswith" id='beginswith'><option></option></select> through			
+			<select name="beginswith" id='endswith'><option>select the first letter</option></select>
+				
+		</div><br>
+		<input id='submitbutton' type="submit"><br>
+		<a id="showadvancedsearch" href="javascript:void(0)">advanced search</a><br>
+	</form>
+</div>
+<div id='headerpadding'></div>
+<div id="entries">
+</div>
+<a id='logout' href='$(users.create_logout_url("/urbandaddy"))' >logout $users.get_current_user().nickname()</a><br>
+</body>
+</html>

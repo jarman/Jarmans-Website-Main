@@ -3,6 +3,7 @@
 
 import web
 import datetime
+import logging
 from google.appengine.ext import db
 from google.appengine.api import users
 from google.appengine.api import urlfetch
@@ -18,10 +19,11 @@ urls = (
     '/about', 'about',
     '/music', 'music',
     '/selectLibrary', 'selectLibrary',
-	'/createPost(.*)', 'createPost',
-	'/searchPosts(.*)', 'searchPosts',
+#	'/influx(.*)', 'influx',
+	'/api(.*)', 'influxProxy',
 	'/reviews(.*)', 'reviews',
 	'/reviewposts/(.*)', 'reviewposts',
+	'/contacts', 'contacts',
 	'/dev(.*)', 'devServer',
     '/(.*)', 'blog'
 )
@@ -174,13 +176,15 @@ class devServer:
 	def GET(self, name):
 		return web.seeother("http://184.73.69.209/builds")
 
-from postSearch import *
+#from influx import *
 from reviews import *
+from contacts import *
 
 app = web.application(urls, globals())
 
 def main():
-    app.cgirun()
+	logging.getLogger().setLevel(logging.DEBUG)
+	app.cgirun()
 
 
 if __name__ == "__main__":

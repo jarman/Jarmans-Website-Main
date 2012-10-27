@@ -1,0 +1,27 @@
+$def with (entries, max)
+
+$for i, entry in enumerate(entries[0:max]):
+	<div class='contactEntry'>
+	$if (entry.title and entry.title.text):
+		<h4>$entry.title.text</h4>
+	$if entry.organization:
+		$if entry.organization.org_title:
+			<b>job:</b> $entry.organization.org_title.text<br>
+		$if entry.organization.org_name:
+			<b>company name:</b> $entry.organization.org_name.text<br>
+	$for email in entry.email:
+		$if email.primary:
+			<b>email:</b> $email.address<br>
+	$for num in entry.phone_number:
+		$if num.primary:
+			<b>phone number:</b> $num.text<br>
+	$if entry.birthday:
+		<b>birthday:</b> $entry.birthday.when<br>
+	$for cat in entry.group_membership_info:
+		<b>group:</b> $cat.text<br>
+	</div>
+	<br>
+$if len(entries) > max:
+	first $max of $len(entries) results
+$else:
+	$len(entries) results

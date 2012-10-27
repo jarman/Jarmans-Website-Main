@@ -1,0 +1,110 @@
+.contactEntry {
+	border: solid #e0e0e0 1px;
+	border-radius: 5px;
+	padding: 10px;
+	margin: auto;
+	margin-bottom: 15px;
+	background-color: #e8e4e0;
+	box-shadow: 0px 5px 5px rgba(147,147,147,0.53);
+	overflow-x: scroll;
+	color:#75726c;
+	text-shadow: 0px 1px 1px white;
+	border-top-color: white;
+	display: inline-block;
+}
+
+h4 {
+	margin-top: 30px;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: larger;
+	font-style: normal;
+	font-weight: normal;
+}
+
+a {
+	text-decoration: none;
+	color: black;
+	background-color: #e8e4e0;
+	padding: 5px 10px 5px;
+	border-radius: 3px;
+	border: solid 1px #ada198;
+	border-top-color: white;
+}
+
+.contactEntry h4 {
+	padding: 0px;
+	margin: 0px;
+	color: #877bce;
+}
+
+body {
+	text-align: center;
+	padding: 0px;
+	margin: 0px;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	letter-spacing: 1px;
+	background-image: -webkit-linear-gradient(left, #d8d4d1 0%, #ffffff 50%, #d8d4d1 100%);
+	background-attachment: fixed;
+}
+
+#header {
+	padding: 10px;
+	position: fixed;
+	background: rgba(255,255,255,0.75);
+	width: 100%;
+}
+
+body #header a {
+	color:gray;
+  	font-size: 0.9em;
+  	padding: 2px 8px 3px;
+  	margin: 10px !important;
+}
+
+#header #advancedsearch {
+	display: inline;
+	margin-bottom: 10px !important;
+}
+
+#searchfield {
+	margin-top: 10px;
+}
+
+#mainsearchfield {
+	width: 200px;
+	margin-bottom: 10px;
+}
+
+#mainsearchfield input {
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#submitbutton {
+	text-decoration: none;
+	font-weight: normal;
+	font-style: normal;
+	color: white;
+	background-color: #877bce;
+	padding: 5px 20px 5px;
+	border-radius: 8px;
+	border: solid 1px #ada198;
+	margin: 10px;
+	font-size: larger;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	letter-spacing: 2px;
+}
+
+#headerpadding {
+	height: 150px;
+	margin-bottom: 30px;
+}
+
+#logout {
+	position: fixed;
+	bottom: 10px;
+	right: 10px;
+}
+
+input {
+	text-align: center;
+}

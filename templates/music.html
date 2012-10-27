@@ -17,7 +17,7 @@ $def with (libraries, users)
 	<a href='#' onclick='return toggleRepeat(event)' class='mpButton' id='repeat'><canvas id='repeatCanvas' height='12' width='17'>repeat</canvas></a>
 	<a href='#' onclick='return toggleShuffle(event)' class='mpButton' id='shuffle'><canvas id='shuffleCanvas' height='12' width='20'>shuffle</canvas></a>
 	<a href='#' onmouseover='return openVolume(event)' onmouseout='closeVolume(event)' onclick='return mute(event)' class='mpButton' id='volume'><canvas id='volumeCanvas' height='12' width='16'>volume</canvas></a>
-	<div onmouseout='closeVolume(event)' onmousedown='return startDrag(event)' return false' id='volBar'><div id='volSlider'></div></div>
+	<div onmouseout='closeVolume(event)' onmousedown='return startDrag(event)' id='volBar'><div id='volSlider'></div></div>
 	|<div id='songTime'></div>|<div id='songInfo'></div>
 </div>
 <a  id='progressBar' onMouseDown='return setMouseDown(event)' onClick='return false' href='#'><div id='loadBar'><div id='time'></div></div></a>
